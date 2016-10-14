@@ -26,6 +26,8 @@
                 - $RPC_BRANCH
     wrappers:
       - mask-passwords
+      - ansicolor:
+            colormap: xterm
     builders:
         - run-tests
     publishers:
