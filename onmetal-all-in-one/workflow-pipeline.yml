@@ -16,21 +16,17 @@
             default: master
     dsl: |
         node {
+           build_parameters = [
+                string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
+                string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
+                string(name: 'RPC_REPO', value: RPC_REPO),
+                string(name: 'RPC_BRANCH', value: RPC_BRANCH)
+           ]
            stage('Deploy') {
-                build job: 'OnMetal-All-In-One-Deploy-Greenfield', parameters: [
-                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
-                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
-                    string(name: 'RPC_REPO', value: RPC_REPO),
-                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
-                    ]
+                build job: 'OnMetal-All-In-One-Deploy-Greenfield', parameters: build_parameters
            }
            stage('Test') {
-                build job: 'OnMetal-All-In-One-Test-Greenfield', parameters: [
-                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
-                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
-                    string(name: 'RPC_REPO', value: RPC_REPO),
-                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
-                    ]
+                build job: 'OnMetal-All-In-One-Test-Greenfield', parameters: build_parameters
            }
            stage('Report') {
                 build job: 'OnMetal-All-In-One-Report'
@@ -55,38 +51,24 @@
             default: master
     dsl: |
         node {
+           build_parameters = [
+                string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
+                string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
+                string(name: 'RPC_REPO', value: RPC_REPO),
+                string(name: 'RPC_BRANCH', value: RPC_BRANCH)
+           ]
            stage('Deploy') {
-                build job: 'OnMetal-All-In-One-Deploy-Greenfield', parameters: [
-                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
-                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
-                    string(name: 'RPC_REPO', value: RPC_REPO),
-                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
-                    ]
+                build job: 'OnMetal-All-In-One-Deploy-Greenfield', parameters: build_parameters
            }
            stage('Test') {
-                build job: 'OnMetal-All-In-One-Test-Greenfield', parameters: [
-                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
-                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
-                    string(name: 'RPC_REPO', value: RPC_REPO),
-                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
-                    ]
+                build job: 'OnMetal-All-In-One-Test-Greenfield', parameters: build_parameters
            }
            stage('Upgrade'){
-                build job: 'OnMetal-All-In-One-Deploy-Upgrade', parameters: [
-                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
-                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
-                    string(name: 'RPC_REPO', value: RPC_REPO),
-                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
-                    ]
+                build job: 'OnMetal-All-In-One-Deploy-Upgrade', parameters: build_parameters
 
            }
            stage('Test Upgrade'){
-                build job: 'OnMetal-All-In-One-Test-Upgrade', parameters: [
-                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
-                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
-                    string(name: 'RPC_REPO', value: RPC_REPO),
-                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
-                    ]
+                build job: 'OnMetal-All-In-One-Test-Upgrade', parameters: build_parameters
            }
            stage('Report') {
                 build job: 'OnMetal-All-In-One-Report'
