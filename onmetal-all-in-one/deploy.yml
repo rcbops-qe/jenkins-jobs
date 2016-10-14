@@ -1,0 +1,48 @@
+- job-template:
+    name: 'OnMetal-All-In-One-Deploy-{type}'
+    logrotate:
+        daysToKeep: 30
+    parameters:
+        - string:
+            name: JENKINS_OA_REPO
+            default: https://github.com/rcbops-qe/jenkins-oa
+        - string:
+            name: JENKINS_OA_BRANCH
+            default: master
+        - string:
+            name: RPC_REPO
+            default: https://github.com/rcbops/rpc-openstack
+        - string:
+            name: RPC_BRANCH
+            default: master
+    scm:
+        - git:
+            url: $JENKINS_OA_REPO
+            branches:
+                - $JENKINS_OA_BRANCH
+        - git:
+            url: RPC_REPO
+            branches:
+                - $RPC_BRANCH
+    wrappers:
+      - mask-passwords
+    builders:
+        - deploy-onmetal-all-in-one:
+            os: "{os}"
+            env: "{env}"
+            service-level: "{service-level}"
+
+- project:
+    name: onmetal-all-in-one-deploy
+    type:
+      - Upgrade
+      - Greenfield
+    jobs:
+        - 'OnMetal-All-In-One-Deploy-{type}'
+
+- builder:
+    name: deploy-onmetal-all-in-one
+    description: Deploys a full environment in a single node on public cloud OnMetal.
+    builders:
+        - shell: |
+            #!/bin/bash

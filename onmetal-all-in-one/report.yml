@@ -1,0 +1,11 @@
+- job-template:
+    name: 'OnMetal-All-In-One-Report'
+    logrotate:
+        daysToKeep: 30
+    wrappers:
+      - mask-passwords
+
+- project:
+    name: onmetal-all-in-one-report
+    jobs:
+        - 'OnMetal-All-In-One-Report'

@@ -1,0 +1,48 @@
+- job-template:
+    name: 'OnMetal-All-In-One-Test-{type}'
+    logrotate:
+        daysToKeep: 30
+    parameters:
+        - string:
+            name: JENKINS_OA_REPO
+            default: https://github.com/rcbops-qe/jenkins-oa
+        - string:
+            name: JENKINS_OA_BRANCH
+            default: master
+        - string:
+            name: RPC_REPO
+            default: https://github.com/rcbops/rpc-openstack
+        - string:
+            name: RPC_BRANCH
+            default: master
+    scm:
+        - git:
+            url: $JENKINS_OA_REPO
+            branches:
+                - $JENKINS_OA_BRANCH
+        - git:
+            url: RPC_REPO
+            branches:
+                - $RPC_BRANCH
+    wrappers:
+      - mask-passwords
+    builders:
+        - run-tests
+    publishers:
+        - junit:
+            results: "**/results.xml"
+
+- project:
+    name: onmetal-all-in-one-test
+    type:
+      - Upgrade
+      - Greenfield
+    jobs:
+        - 'OnMetal-All-In-One-Test-{type}'
+
+- builder:
+    name: run-tests
+    description: Run regression tests using builder script
+    builders:
+        - shell: |
+            #!/bin/bash
