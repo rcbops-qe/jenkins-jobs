@@ -1,0 +1,94 @@
+- job:
+    name: OnMetal-All-In-One-Greenfield-Testing-Pipeline
+    project-type: workflow
+    parameters:
+        - string:
+            name: JENKINS_OA_REPO
+            default: https://github.com/rcbops-qe/jenkins-oa
+        - string:
+            name: JENKINS_OA_BRANCH
+            default: master
+        - string:
+            name: RPC_REPO
+            default: https://github.com/rcbops/rpc-openstack
+        - string:
+            name: RPC_BRANCH
+            default: master
+    dsl: |
+        node {
+           stage('Deploy') {
+                build job: 'OnMetal-All-In-One-Deploy-Greenfield', parameters: [
+                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
+                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
+                    string(name: 'RPC_REPO', value: RPC_REPO),
+                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
+                    ]
+           }
+           stage('Test') {
+                build job: 'OnMetal-All-In-One-Test-Greenfield', parameters: [
+                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
+                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
+                    string(name: 'RPC_REPO', value: RPC_REPO),
+                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
+                    ]
+           }
+           stage('Report') {
+                build job: 'OnMetal-All-In-One-Report'
+           }
+        }
+
+- job:
+    name: OnMetal-All-In-One-Upgrade-Testing-Pipeline
+    project-type: workflow
+    parameters:
+        - string:
+            name: JENKINS_OA_REPO
+            default: https://github.com/rcbops-qe/jenkins-oa
+        - string:
+            name: JENKINS_OA_BRANCH
+            default: master
+        - string:
+            name: RPC_REPO
+            default: https://github.com/rcbops/rpc-openstack
+        - string:
+            name: RPC_BRANCH
+            default: master
+    dsl: |
+        node {
+           stage('Deploy') {
+                build job: 'OnMetal-All-In-One-Deploy-Greenfield', parameters: [
+                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
+                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
+                    string(name: 'RPC_REPO', value: RPC_REPO),
+                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
+                    ]
+           }
+           stage('Test') {
+                build job: 'OnMetal-All-In-One-Test-Greenfield', parameters: [
+                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
+                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
+                    string(name: 'RPC_REPO', value: RPC_REPO),
+                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
+                    ]
+           }
+           stage('Upgrade'){
+                build job: 'OnMetal-All-In-One-Deploy-Upgrade', parameters: [
+                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
+                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
+                    string(name: 'RPC_REPO', value: RPC_REPO),
+                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
+                    ]
+
+           }
+           stage('Test Upgrade'){
+                build job: 'OnMetal-All-In-One-Test-Upgrade', parameters: [
+                    string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
+                    string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
+                    string(name: 'RPC_REPO', value: RPC_REPO),
+                    string(name: 'RPC_BRANCH', value: RPC_BRANCH)
+                    ]
+           }
+           stage('Report') {
+                build job: 'OnMetal-All-In-One-Report'
+           }
+        }
