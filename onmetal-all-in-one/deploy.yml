@@ -29,10 +29,7 @@
       - ansicolor:
             colormap: xterm
     builders:
-        - deploy-onmetal-all-in-one:
-            os: "{os}"
-            env: "{env}"
-            service-level: "{service-level}"
+        - deploy-onmetal-all-in-one
 
 - project:
     name: onmetal-all-in-one-deploy

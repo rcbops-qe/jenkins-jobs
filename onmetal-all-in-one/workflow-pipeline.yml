@@ -65,7 +65,6 @@
            }
            stage('Upgrade'){
                 build job: 'OnMetal-All-In-One-Deploy-Upgrade', parameters: build_parameters
-
            }
            stage('Test Upgrade'){
                 build job: 'OnMetal-All-In-One-Test-Upgrade', parameters: build_parameters
