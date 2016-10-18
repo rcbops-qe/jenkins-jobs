@@ -1,0 +1,36 @@
+- job:
+    name: 'Jenkins-Job-Builder'
+    description: Creates and updates jobs with Jenkins Job Builder.
+    logrotate:
+        daysToKeep: 20
+    node: master
+    parameters:
+        - string:
+            name: JOBS
+            description: "Which jobs to update and with what options."
+            default: -r .
+        - bool:
+            name: IGNORE_CACHE
+            description: "Ignore cache when updating jobs."
+    scm:
+        - git:
+            url: https://github.com/rcbops-qe/jenkins-jobs
+            branches:
+                - "*/master"
+            skip-tag: true
+            wipe-workspace: false
+    builders:
+        - shining-panda:
+            build-environment: virtualenv
+            python-version: System-CPython-2.7
+            nature: shell
+            command: |
+                rm -rf jenkins-job-builder
+                git clone https://github.com/openstack-infra/jenkins-job-builder
+                pip install ./jenkins-job-builder
+
+                if [ "$IGNORE_CACHE" = "true" ]; then
+                    JJB_ARGS="--ignore-cache"
+                fi
+
+                jenkins-jobs --conf /var/lib/jenkins/jenkins_jobs.ini $JJB_ARGS update $JOBS
