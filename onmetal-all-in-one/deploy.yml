@@ -46,6 +46,7 @@
     builders:
         - shell: |
             #!/bin/bash
+            cd multi-node-aio
             source setup-host.sh
 
 - builder:
@@ -54,6 +55,7 @@
     builders:
         - shell: |
             #!/bin/bash
+            cd multi-node-aio
             source setup-cobbler.sh
 
 
@@ -63,6 +65,7 @@
     builders:
         - shell: |
             #!/bin/bash
+            cd multi-node-aio
             source setup-virsh-net.sh
 
 - builder:
@@ -71,5 +74,6 @@
     builders:
         - shell: |
             #!/bin/bash
+            cd multi-node-aio
             source deploy-vms.sh
 
