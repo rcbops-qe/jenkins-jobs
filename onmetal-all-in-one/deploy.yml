@@ -28,7 +28,8 @@
         - Setup-Host
         - Setup-Cobbler
         - Setup-Virsh
-        - Deploy-VMs            
+        - Deploy-VMs
+        - Deploy-OpenStack
     jobs:
         - 'OnMetal-AIO-{deploy-action}'
 
@@ -77,3 +78,11 @@
             cd multi-node-aio
             source deploy-vms.sh
 
+- builder:
+    name: OnMetal-Deploy-OpenStack
+    description:
+    builders:
+        - shell: |
+            #!/bin/bash
+            cd multi-node-aio
+            source deploy-osa.sh
