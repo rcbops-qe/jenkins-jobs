@@ -1,47 +1,75 @@
 - job-template:
-    name: 'OnMetal-All-In-One-Deploy-{type}'
+    name: 'OnMetal-AIO-{deploy-action}'
     logrotate:
         daysToKeep: 30
     parameters:
         - string:
-            name: JENKINS_OA_REPO
-            default: https://github.com/rcbops-qe/jenkins-oa
+            name: OSA_OPS_REPO
+            default: https://github.com/rcbops-qe/openstack-ansible-ops
         - string:
-            name: JENKINS_OA_BRANCH
-            default: master
-        - string:
-            name: RPC_REPO
-            default: https://github.com/rcbops/rpc-openstack
-        - string:
-            name: RPC_BRANCH
+            name: OSA_OPS_BRANCH
             default: master
     scm:
         - git:
-            url: $JENKINS_OA_REPO
+            url: $OSA_OPS_REPO
             branches:
-                - $JENKINS_OA_BRANCH
-        - git:
-            url: RPC_REPO
-            branches:
-                - $RPC_BRANCH
+                - $OSA_OPS_BRANCH
     wrappers:
       - mask-passwords
       - ansicolor:
             colormap: xterm
     builders:
-        - deploy-onmetal-all-in-one
+        - OnMetal-{deploy-action}
 
 - project:
     name: onmetal-all-in-one-deploy
-    type:
-      - Upgrade
-      - Greenfield
+    deploy-action:
+        - Build-Host
+        - Setup-Host
+        - Setup-Cobbler
+        - Setup-Virsh
+        - Deploy-VMs            
     jobs:
-        - 'OnMetal-All-In-One-Deploy-{type}'
+        - 'OnMetal-AIO-{deploy-action}'
+
 
 - builder:
-    name: deploy-onmetal-all-in-one
-    description: Deploys a full environment in a single node on public cloud OnMetal.
+    name: OnMetal-Build-Host
+    description: Creates an OnMetal cloud server.
     builders:
         - shell: |
             #!/bin/bash
+
+- builder:
+    name: OnMetal-Setup-Host
+    description: Runs all required host setup
+    builders:
+        - shell: |
+            #!/bin/bash
+            source setup-host.sh
+
+- builder:
+    name: OnMetal-Setup-Cobbler
+    description: Runs installation and configuration of Cobbler
+    builders:
+        - shell: |
+            #!/bin/bash
+            source setup-cobbler.sh
+
+
+- builder:
+    name: OnMetal-Setup-Virsh
+    description: Setup libvirt networks used for the Host VMs
+    builders:
+        - shell: |
+            #!/bin/bash
+            source setup-virsh-net.sh
+
+- builder:
+    name: OnMetal-Deploy-VMs
+    description:
+    builders:
+        - shell: |
+            #!/bin/bash
+            source deploy-vms.sh
+
