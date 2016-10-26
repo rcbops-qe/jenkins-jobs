@@ -10,12 +10,14 @@
     parameters:
         - choice:
             name: REGION
+            description: Region to create server in. Refer to OnMetal capacity dashboard when choosing a region.
             choices:
-                - IAD
                 - DFW
+                - IAD
                 - LON
         - choice:
             name: FLAVOR
+            descrption: "Note: onmetal-io1 (OnMetal V1) is only avaialble in IAD"
             choices:
                 - onmetal-io2
                 - onmetal-io1
@@ -26,12 +28,17 @@
         - string:
             name: SERVER_NAME
             description: Optional name for created server.
-            default:
+        - string:
+            name: JENKINS_OA
+            default: https://github.com/melissa-kam/rax-ansible-testing
+        - string:
+            name: JENKINS_OA_BRANCH
+            default: master
     scm:
         - git:
-            url: $OSA_OPS_REPO
+            url: $JENKINS_OA
             branches:
-                - $OSA_OPS_BRANCH
+                - $JENKINS_OA_BRANCH
     wrappers:
       - mask-passwords
       - ansicolor:
@@ -44,6 +51,12 @@
     logrotate:
         daysToKeep: 30
     parameters:
+        - string:
+            name: SERVER_NAME
+            default: Jenkins-OM-AIO-
+            description: >
+               Name of server to run scripts on. Default name for servers created by OnMetal-AIO-Build-Host job
+               is Jenkins-OM-AIO-<build number>.
         - string:
             name: OSA_OPS_REPO
             default: https://github.com/rcbops-qe/openstack-ansible-ops
@@ -80,8 +93,18 @@
     name: OnMetal-Build-Host
     description: Creates an OnMetal cloud server.
     builders:
-        - shell: |
-            #!/bin/bash
+        - shining-panda:
+            build-environment: virtualenv
+            python-version: System-CPython-2.7
+            nature: shell
+            command: |
+                #!/bin/bash
+                pip install ansible pyrax
+                export ANSIBLE_FORCE_COLOR=true
+                export RAX_CREDS_FILE=/var/jenkins_home/.raxpub
+                export RAX_REGION=$REGION
+                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME flavor=$FLAVOR image=$IMAGE count=1 key_name=mkam-pub group=om-aio"
 
 - builder:
     name: OnMetal-Setup-Host
