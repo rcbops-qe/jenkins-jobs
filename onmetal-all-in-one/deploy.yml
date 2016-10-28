@@ -29,14 +29,14 @@
             name: SERVER_NAME
             description: Optional name for created server. Defaults to Jenkins-OM-AIO-<job build num>.
         - string:
-            name: JENKINS_OA
+            name: JENKINS_OA_REPO
             default: https://github.com/melissa-kam/rax-ansible-testing
         - string:
             name: JENKINS_OA_BRANCH
             default: master
     scm:
         - git:
-            url: $JENKINS_OA
+            url: $JENKINS_OA_REPO
             branches:
                 - $JENKINS_OA_BRANCH
     wrappers:
@@ -71,14 +71,14 @@
             name: OSA_OPS_BRANCH
             default: master
         - string:
-            name: JENKINS_OA
+            name: JENKINS_OA_REPO
             default: https://github.com/melissa-kam/rax-ansible-testing
         - string:
             name: JENKINS_OA_BRANCH
             default: master
     scm:
         - git:
-            url: $JENKINS_OA
+            url: $JENKINS_OA_REPO
             branches:
                 - $JENKINS_OA_BRANCH
         - git:

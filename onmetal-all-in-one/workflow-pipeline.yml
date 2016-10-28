@@ -22,7 +22,7 @@
         - string:
             name: SERVER_NAME
             description: >
-               Optional name of host server. Defaults to Jenkins-OM-AIO-<build number of OnMetal-AIO-Build-Host job>.
+               Optional name of host server. Defaults to Jenkins-OM-AIO-Pipeline-<build number>.
         - string:
             name: OSA_OPS_REPO
             default: https://github.com/rcbops-qe/openstack-ansible-ops
@@ -30,7 +30,7 @@
             name: OSA_OPS_BRANCH
             default: master
         - string:
-            name: JENKINS_OA
+            name: JENKINS_OA_REPO
             default: https://github.com/melissa-kam/rax-ansible-testing
         - string:
             name: JENKINS_OA_BRANCH
@@ -46,30 +46,38 @@
                 - $OSA_OPS_BRANCH
     dsl: |
         node {
-           build_parameters = [
+            name = SERVER_NAME
+            if(name == ""){
+                name = "Jenkins-OM-AIO-Pipeline-" + currentBuild.number
+            }
+            build_parameters = [
+                string(name: 'REGION', value: region),
+                string(name: 'FLAVOR', value: flavor),
+                string(name: 'IMAGE', value: image),
+                string(name: 'SERVER_NAME', value: name),
                 string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
                 string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
-                string(name: 'RPC_REPO', value: RPC_REPO),
-                string(name: 'RPC_BRANCH', value: RPC_BRANCH)
-           ]
-           stage('Build OnMetal Host Server') {
+                string(name: 'OSA_OPS_REPO', value: OSA_OPS_REPO),
+                string(name: 'OSA_OPS_BRANCH', value: OSA_OPS_BRANCH)
+            ]
+            stage('Build OnMetal Host Server') {
                 build job: 'OnMetal-AIO-Build-Host', parameters: build_parameters
-           }
-           stage('Basic Host Server Setup') {
+            }
+            stage('Basic Host Server Setup') {
                 build job: 'OnMetal-AIO-Setup-Host', parameters: build_parameters
-           }
-           stage('Setup Cobbler on Host Server') {
+            }
+            stage('Setup Cobbler on Host Server') {
                 build job: 'OnMetal-AIO-Setup-Cobbler', parameters: build_parameters
-           }
-           stage('Setup Virtual Networks') {
+            }
+            stage('Setup Virtual Networks') {
                 build job: 'OnMetal-AIO-Virtual-Networks', parameters: build_parameters
-           }
-           stage('Deploy VMs') {
+            }
+            stage('Deploy VMs') {
                 build job: 'OnMetal-AIO-Deploy-VMs', parameters: build_parameters
-           }
-           stage('Setup for Deploying Openstack Ansible') {
+            }
+            stage('Setup for Deploying Openstack Ansible') {
                 build job: 'OnMetal-AIO-OpenStack-Setup', parameters: build_parameters
-           }
-           stage('Deploy RPC') {
-           }
+            }
+            stage('Deploy RPC') {
+            }
         }
