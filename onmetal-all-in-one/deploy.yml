@@ -27,7 +27,7 @@
             default: 9dc2bf0a-7771-45cd-a7f9-ce86ce94c548
         - string:
             name: SERVER_NAME
-            description: Optional name for created server.
+            description: Optional name for created server. Defaults to Jenkins-OM-AIO-<job build num>.
         - string:
             name: JENKINS_OA
             default: https://github.com/melissa-kam/rax-ansible-testing
@@ -57,13 +57,30 @@
             description: >
                Name of server to run scripts on. Default name for servers created by OnMetal-AIO-Build-Host job
                is Jenkins-OM-AIO-<build number>.
+        - choice:
+            name: REGION
+            description: Region of server to run scripts on
+            choices:
+                - DFW
+                - IAD
+                - LON
         - string:
             name: OSA_OPS_REPO
             default: https://github.com/rcbops-qe/openstack-ansible-ops
         - string:
             name: OSA_OPS_BRANCH
             default: master
+        - string:
+            name: JENKINS_OA
+            default: https://github.com/melissa-kam/rax-ansible-testing
+        - string:
+            name: JENKINS_OA_BRANCH
+            default: master
     scm:
+        - git:
+            url: $JENKINS_OA
+            branches:
+                - $JENKINS_OA_BRANCH
         - git:
             url: $OSA_OPS_REPO
             branches:
@@ -81,9 +98,9 @@
     deploy-action:
         - Setup-Host
         - Setup-Cobbler
-        - Setup-Virsh
+        - Virtual-Networks
         - Deploy-VMs
-        - Deploy-OpenStack
+        - OpenStack-Setup
     jobs:
         - 'OnMetal-AIO-Build-Host'
         - 'OnMetal-AIO-{deploy-action}'
@@ -99,55 +116,98 @@
             nature: shell
             command: |
                 #!/bin/bash
+                cd rax-ansible-testing
                 pip install ansible pyrax
                 export ANSIBLE_FORCE_COLOR=true
-                export RAX_CREDS_FILE=/var/jenkins_home/.raxpub
-                export RAX_REGION=$REGION
                 export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME flavor=$FLAVOR image=$IMAGE count=1 key_name=mkam-pub group=om-aio"
+
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION flavor=$FLAVOR image=$IMAGE count=1 key_name=jenkins-key group=om-aio" --tags build --skip-tags always
 
 - builder:
     name: OnMetal-Setup-Host
     description: Runs all required host setup
     builders:
-        - shell: |
-            #!/bin/bash
-            cd multi-node-aio
-            source setup-host.sh
+        - shining-panda:
+            build-environment: virtualenv
+            python-version: System-CPython-2.7
+            nature: shell
+            command: |
+                #!/bin/bash
+                cd rax-ansible-testing
+                pip install ansible pyrax
+                export ANSIBLE_FORCE_COLOR=true
+                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+                export ANSIBLE_HOST_KEY_CHECKING=False
+
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags setup
 
 - builder:
     name: OnMetal-Setup-Cobbler
     description: Runs installation and configuration of Cobbler
     builders:
-        - shell: |
-            #!/bin/bash
-            cd multi-node-aio
-            source setup-cobbler.sh
+        - shining-panda:
+            build-environment: virtualenv
+            python-version: System-CPython-2.7
+            nature: shell
+            command: |
+                #!/bin/bash
+                cd rax-ansible-testing
+                pip install ansible pyrax
+                export ANSIBLE_FORCE_COLOR=true
+                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+                export ANSIBLE_HOST_KEY_CHECKING=False
 
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags cobbler
 
 - builder:
-    name: OnMetal-Setup-Virsh
+    name: OnMetal-Setup-Virtual-Networks
     description: Setup libvirt networks used for the Host VMs
     builders:
-        - shell: |
-            #!/bin/bash
-            cd multi-node-aio
-            source setup-virsh-net.sh
+        - shining-panda:
+            build-environment: virtualenv
+            python-version: System-CPython-2.7
+            nature: shell
+            command: |
+                #!/bin/bash
+                cd rax-ansible-testing
+                pip install ansible pyrax
+                export ANSIBLE_FORCE_COLOR=true
+                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+                export ANSIBLE_HOST_KEY_CHECKING=False
+
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags networks
 
 - builder:
     name: OnMetal-Deploy-VMs
     description:
     builders:
-        - shell: |
-            #!/bin/bash
-            cd multi-node-aio
-            source deploy-vms.sh
+        - shining-panda:
+            build-environment: virtualenv
+            python-version: System-CPython-2.7
+            nature: shell
+            command: |
+                #!/bin/bash
+                cd rax-ansible-testing
+                pip install ansible pyrax
+                export ANSIBLE_FORCE_COLOR=true
+                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+                export ANSIBLE_HOST_KEY_CHECKING=False
 
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags vms
 - builder:
-    name: OnMetal-Deploy-OpenStack
+    name: OnMetal-OpenStack-Setup
     description:
     builders:
-        - shell: |
-            #!/bin/bash
-            cd multi-node-aio
-            source deploy-osa.sh
+        - shining-panda:
+            build-environment: virtualenv
+            python-version: System-CPython-2.7
+            nature: shell
+            command: |
+                #!/bin/bash
+                cd rax-ansible-testing
+                pip install ansible pyrax
+                export ANSIBLE_FORCE_COLOR=true
+                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+                export ANSIBLE_HOST_KEY_CHECKING=False
+
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags osa
