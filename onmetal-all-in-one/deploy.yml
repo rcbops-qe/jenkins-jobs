@@ -160,7 +160,7 @@
                 ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags cobbler
 
 - builder:
-    name: OnMetal-Setup-Virtual-Networks
+    name: OnMetal-Virtual-Networks
     description: Setup libvirt networks used for the Host VMs
     builders:
         - shining-panda:

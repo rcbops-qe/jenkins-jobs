@@ -1,19 +1,49 @@
 - job:
-    name: OnMetal-All-In-One-Greenfield-Testing-Pipeline
+    name: OnMetal-All-In-One-Pipeline
     project-type: workflow
     parameters:
+        - choice:
+            name: REGION
+            description: Region of server to build in
+            choices:
+                - DFW
+                - IAD
+                - LON
+        - choice:
+            name: FLAVOR
+            descrption: "Note: onmetal-io1 (OnMetal V1) is only avaialble in IAD"
+            choices:
+                - onmetal-io2
+                - onmetal-io1
         - string:
-            name: JENKINS_OA_REPO
-            default: https://github.com/rcbops-qe/jenkins-oa
+            name: IMAGE
+            description: Default is OnMetal - Ubuntu 14.04 LTS (Trusty Tahr)
+            default: 9dc2bf0a-7771-45cd-a7f9-ce86ce94c548
+        - string:
+            name: SERVER_NAME
+            description: >
+               Optional name of host server. Defaults to Jenkins-OM-AIO-<build number of OnMetal-AIO-Build-Host job>.
+        - string:
+            name: OSA_OPS_REPO
+            default: https://github.com/rcbops-qe/openstack-ansible-ops
+        - string:
+            name: OSA_OPS_BRANCH
+            default: master
+        - string:
+            name: JENKINS_OA
+            default: https://github.com/melissa-kam/rax-ansible-testing
         - string:
             name: JENKINS_OA_BRANCH
             default: master
-        - string:
-            name: RPC_REPO
-            default: https://github.com/rcbops/rpc-openstack
-        - string:
-            name: RPC_BRANCH
-            default: master
+    scm:
+        - git:
+            url: $JENKINS_OA
+            branches:
+                - $JENKINS_OA_BRANCH
+        - git:
+            url: $OSA_OPS_REPO
+            branches:
+                - $OSA_OPS_BRANCH
     dsl: |
         node {
            build_parameters = [
@@ -22,54 +52,24 @@
                 string(name: 'RPC_REPO', value: RPC_REPO),
                 string(name: 'RPC_BRANCH', value: RPC_BRANCH)
            ]
-           stage('Deploy') {
-                build job: 'OnMetal-All-In-One-Deploy-Greenfield', parameters: build_parameters
+           stage('Build OnMetal Host Server') {
+                build job: 'OnMetal-AIO-Build-Host', parameters: build_parameters
            }
-           stage('Test') {
-                build job: 'OnMetal-All-In-One-Test-Greenfield', parameters: build_parameters
+           stage('Basic Host Server Setup') {
+                build job: 'OnMetal-AIO-Setup-Host', parameters: build_parameters
            }
-           stage('Report') {
-                build job: 'OnMetal-All-In-One-Report'
+           stage('Setup Cobbler on Host Server') {
+                build job: 'OnMetal-AIO-Setup-Cobbler', parameters: build_parameters
            }
-        }
-
-- job:
-    name: OnMetal-All-In-One-Upgrade-Testing-Pipeline
-    project-type: workflow
-    parameters:
-        - string:
-            name: JENKINS_OA_REPO
-            default: https://github.com/rcbops-qe/jenkins-oa
-        - string:
-            name: JENKINS_OA_BRANCH
-            default: master
-        - string:
-            name: RPC_REPO
-            default: https://github.com/rcbops/rpc-openstack
-        - string:
-            name: RPC_BRANCH
-            default: master
-    dsl: |
-        node {
-           build_parameters = [
-                string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
-                string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
-                string(name: 'RPC_REPO', value: RPC_REPO),
-                string(name: 'RPC_BRANCH', value: RPC_BRANCH)
-           ]
-           stage('Deploy') {
-                build job: 'OnMetal-All-In-One-Deploy-Greenfield', parameters: build_parameters
+           stage('Setup Virtual Networks') {
+                build job: 'OnMetal-AIO-Virtual-Networks', parameters: build_parameters
            }
-           stage('Test') {
-                build job: 'OnMetal-All-In-One-Test-Greenfield', parameters: build_parameters
+           stage('Deploy VMs') {
+                build job: 'OnMetal-AIO-Deploy-VMs', parameters: build_parameters
            }
-           stage('Upgrade'){
-                build job: 'OnMetal-All-In-One-Deploy-Upgrade', parameters: build_parameters
+           stage('Setup for Deploying Openstack Ansible') {
+                build job: 'OnMetal-AIO-OpenStack-Setup', parameters: build_parameters
            }
-           stage('Test Upgrade'){
-                build job: 'OnMetal-All-In-One-Test-Upgrade', parameters: build_parameters
-           }
-           stage('Report') {
-                build job: 'OnMetal-All-In-One-Report'
+           stage('Deploy RPC') {
            }
         }
