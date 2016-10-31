@@ -1,3 +1,28 @@
+- scm:
+    name: jenkins-oa-scm
+    scm:
+        - git:
+            url: $JENKINS_OA_REPO
+            branches:
+                - $JENKINS_OA_BRANCH
+            basedir: rax-ansible-testing
+            wipe-workspace: false
+- scm:
+    name: osa-ops-scm
+    scm:
+        - git:
+            url: $OSA_OPS_REPO
+            branches:
+                - $OSA_OPS_BRANCH
+            basedir: openstack-ansible-ops
+            wipe-workspace: false
+- scm:
+    name: jenkins-osa-ops-scm
+    scm:
+        - jenkins-oa-scm
+        - osa-ops-scm
+
+
 - job-template:
     name: 'OnMetal-AIO-Build-Host'
     description: >
@@ -7,6 +32,7 @@
         OnMetal Production Capacity Dashboard: https://onmetal.ohthree.com/iad-m0002
     logrotate:
         daysToKeep: 30
+    node: 'slaves'
     parameters:
         - choice:
             name: REGION
@@ -35,13 +61,10 @@
             name: JENKINS_OA_BRANCH
             default: master
     scm:
-        - git:
-            url: $JENKINS_OA_REPO
-            branches:
-                - $JENKINS_OA_BRANCH
+        - jenkins-oa-scm
     wrappers:
-      - mask-passwords
-      - ansicolor:
+        - mask-passwords
+        - ansicolor:
             colormap: xterm
     builders:
         - OnMetal-Build-Host
@@ -50,6 +73,7 @@
     name: 'OnMetal-AIO-{deploy-action}'
     logrotate:
         daysToKeep: 30
+    node: 'slaves'
     parameters:
         - string:
             name: SERVER_NAME
@@ -77,17 +101,10 @@
             name: JENKINS_OA_BRANCH
             default: master
     scm:
-        - git:
-            url: $JENKINS_OA_REPO
-            branches:
-                - $JENKINS_OA_BRANCH
-        - git:
-            url: $OSA_OPS_REPO
-            branches:
-                - $OSA_OPS_BRANCH
+        - jenkins-osa-ops-scm
     wrappers:
-      - mask-passwords
-      - ansicolor:
+        - mask-passwords
+        - ansicolor:
             colormap: xterm
     builders:
         - OnMetal-{deploy-action}
@@ -116,12 +133,13 @@
             nature: shell
             command: |
                 #!/bin/bash
-                cd rax-ansible-testing
                 pip install ansible pyrax
                 export ANSIBLE_FORCE_COLOR=true
+                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+                export RAX_REGION=$REGION
                 export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION flavor=$FLAVOR image=$IMAGE count=1 key_name=jenkins-key group=om-aio" --tags build --skip-tags always
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME flavor=$FLAVOR image=$IMAGE count=1 key_name=jenkins-key group=om-aio" --tags build --skip-tags always
 
 - builder:
     name: OnMetal-Setup-Host
@@ -136,10 +154,12 @@
                 cd rax-ansible-testing
                 pip install ansible pyrax
                 export ANSIBLE_FORCE_COLOR=true
+                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+                export RAX_REGION=$REGION
                 export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
                 export ANSIBLE_HOST_KEY_CHECKING=False
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags setup
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags setup
 
 - builder:
     name: OnMetal-Setup-Cobbler
@@ -154,10 +174,12 @@
                 cd rax-ansible-testing
                 pip install ansible pyrax
                 export ANSIBLE_FORCE_COLOR=true
+                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+                export RAX_REGION=$REGION
                 export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
                 export ANSIBLE_HOST_KEY_CHECKING=False
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags cobbler
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags cobbler
 
 - builder:
     name: OnMetal-Virtual-Networks
@@ -172,6 +194,8 @@
                 cd rax-ansible-testing
                 pip install ansible pyrax
                 export ANSIBLE_FORCE_COLOR=true
+                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+                export RAX_REGION=$REGION
                 export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
                 export ANSIBLE_HOST_KEY_CHECKING=False
 
@@ -190,6 +214,8 @@
                 cd rax-ansible-testing
                 pip install ansible pyrax
                 export ANSIBLE_FORCE_COLOR=true
+                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+                export RAX_REGION=$REGION
                 export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
                 export ANSIBLE_HOST_KEY_CHECKING=False
 
@@ -207,6 +233,8 @@
                 cd rax-ansible-testing
                 pip install ansible pyrax
                 export ANSIBLE_FORCE_COLOR=true
+                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+                export RAX_REGION=$REGION
                 export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
                 export ANSIBLE_HOST_KEY_CHECKING=False
 
