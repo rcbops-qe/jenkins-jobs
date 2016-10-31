@@ -1,28 +1,3 @@
-- scm:
-    name: jenkins-oa-scm
-    scm:
-        - git:
-            url: $JENKINS_OA_REPO
-            branches:
-                - $JENKINS_OA_BRANCH
-            basedir: rax-ansible-testing
-            wipe-workspace: false
-- scm:
-    name: osa-ops-scm
-    scm:
-        - git:
-            url: $OSA_OPS_REPO
-            branches:
-                - $OSA_OPS_BRANCH
-            basedir: openstack-ansible-ops
-            wipe-workspace: false
-- scm:
-    name: jenkins-osa-ops-scm
-    scm:
-        - jenkins-oa-scm
-        - osa-ops-scm
-
-
 - job-template:
     name: 'OnMetal-AIO-Build-Host'
     description: >
@@ -67,7 +42,7 @@
         - ansicolor:
             colormap: xterm
     builders:
-        - OnMetal-Build-Host
+        - onmetal-aio-build-host-builder
 
 - job-template:
     name: 'OnMetal-AIO-{deploy-action}'
@@ -107,24 +82,51 @@
         - ansicolor:
             colormap: xterm
     builders:
-        - OnMetal-{deploy-action}
-
+        - onmetal-aio-action-builder
 
 - project:
     name: onmetal-all-in-one-deploy
     deploy-action:
-        - Setup-Host
-        - Setup-Cobbler
-        - Virtual-Networks
-        - Deploy-VMs
-        - OpenStack-Setup
+        - Setup-Host:
+            tags: host
+        - Setup-Cobbler:
+            tags: cobbler
+        - Virtual-Networks:
+            tags: networks
+        - Deploy-VMs:
+            tags: vms
+        - OpenStack-Setup:
+            tags: osa
     jobs:
         - 'OnMetal-AIO-Build-Host'
         - 'OnMetal-AIO-{deploy-action}'
 
+- scm:
+    name: jenkins-oa-scm
+    scm:
+        - git:
+            url: $JENKINS_OA_REPO
+            branches:
+                - $JENKINS_OA_BRANCH
+            basedir: rax-ansible-testing
+            wipe-workspace: false
+- scm:
+    name: osa-ops-scm
+    scm:
+        - git:
+            url: $OSA_OPS_REPO
+            branches:
+                - $OSA_OPS_BRANCH
+            basedir: openstack-ansible-ops
+            wipe-workspace: false
+- scm:
+    name: jenkins-osa-ops-scm
+    scm:
+        - jenkins-oa-scm
+        - osa-ops-scm
 
 - builder:
-    name: OnMetal-Build-Host
+    name: onmetal-aio-build-host-builder
     description: Creates an OnMetal cloud server.
     builders:
         - shell: |
@@ -143,7 +145,7 @@
             ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME flavor=$FLAVOR image=$IMAGE count=1 key_name=jenkins group=om-aio" --tags build --skip-tags always
 
 - builder:
-    name: OnMetal-Setup-Host
+    name: onmetal-aio-action-builder
     description: Runs all required host setup
     builders:
         - shell: |
@@ -161,87 +163,4 @@
             export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
             export ANSIBLE_HOST_KEY_CHECKING=False
 
-            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags host
-
-- builder:
-    name: OnMetal-Setup-Cobbler
-    description: Runs installation and configuration of Cobbler
-    builders:
-        - shell: |
-            #!/bin/bash
-            if [[ ! -d ".venv" ]]; then
-                virtualenv .venv
-            fi
-            source .venv/bin/activate
-            pip install ansible pyrax
-            cd rax-ansible-testing
-            export ANSIBLE_FORCE_COLOR=true
-            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-            export RAX_REGION=$REGION
-            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
-            export ANSIBLE_HOST_KEY_CHECKING=False
-
-            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags cobbler
-
-- builder:
-    name: OnMetal-Virtual-Networks
-    description: Setup libvirt networks used for the Host VMs
-    builders:
-        - shell: |
-            #!/bin/bash
-            if [[ ! -d ".venv" ]]; then
-                virtualenv .venv
-            fi
-            source .venv/bin/activate
-            pip install ansible pyrax
-
-            cd rax-ansible-testing
-            export ANSIBLE_FORCE_COLOR=true
-            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-            export RAX_REGION=$REGION
-            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
-            export ANSIBLE_HOST_KEY_CHECKING=False
-
-            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags networks
-
-- builder:
-    name: OnMetal-Deploy-VMs
-    description:
-    builders:
-        - shell: |
-            #!/bin/bash
-            if [[ ! -d ".venv" ]]; then
-                virtualenv .venv
-            fi
-            source .venv/bin/activate
-            pip install ansible pyrax
-
-            cd rax-ansible-testing
-            export ANSIBLE_FORCE_COLOR=true
-            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-            export RAX_REGION=$REGION
-            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
-            export ANSIBLE_HOST_KEY_CHECKING=False
-
-            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags vms
-
-- builder:
-    name: OnMetal-OpenStack-Setup
-    description:
-    builders:
-        - shell: |
-            #!/bin/bash
-            if [[ ! -d ".venv" ]]; then
-                virtualenv .venv
-            fi
-            source .venv/bin/activate
-            pip install ansible pyrax
-
-            cd rax-ansible-testing
-            export ANSIBLE_FORCE_COLOR=true
-            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-            export RAX_REGION=$REGION
-            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
-            export ANSIBLE_HOST_KEY_CHECKING=False
-
-            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags osa
+            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags {tags}
