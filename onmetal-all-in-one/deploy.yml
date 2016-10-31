@@ -127,115 +127,121 @@
     name: OnMetal-Build-Host
     description: Creates an OnMetal cloud server.
     builders:
-        - shining-panda:
-            build-environment: virtualenv
-            python-version: System-CPython-2.7
-            nature: shell
-            command: |
-                #!/bin/bash
-                pip install ansible pyrax
-                export ANSIBLE_FORCE_COLOR=true
-                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-                export RAX_REGION=$REGION
-                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+        - shell: |
+            #!/bin/bash
+            if [[ ! -d ".venv" ]]; then
+                virtualenv .venv
+            fi
+            source .venv/bin/activate
+            pip install ansible pyrax
+            pip install ansible pyrax
+            export ANSIBLE_FORCE_COLOR=true
+            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+            export RAX_REGION=$REGION
+            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME flavor=$FLAVOR image=$IMAGE count=1 key_name=jenkins group=om-aio" --tags build --skip-tags always
+            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME flavor=$FLAVOR image=$IMAGE count=1 key_name=jenkins group=om-aio" --tags build --skip-tags always
 
 - builder:
     name: OnMetal-Setup-Host
     description: Runs all required host setup
     builders:
-        - shining-panda:
-            build-environment: virtualenv
-            python-version: System-CPython-2.7
-            nature: shell
-            command: |
-                #!/bin/bash
-                cd rax-ansible-testing
-                pip install ansible pyrax
-                export ANSIBLE_FORCE_COLOR=true
-                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-                export RAX_REGION=$REGION
-                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
-                export ANSIBLE_HOST_KEY_CHECKING=False
+        - shell: |
+            #!/bin/bash
+            if [[ ! -d ".venv" ]]; then
+                virtualenv .venv
+            fi
+            source .venv/bin/activate
+            pip install ansible pyrax
+            cd rax-ansible-testing
+            pip install ansible pyrax
+            export ANSIBLE_FORCE_COLOR=true
+            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+            export RAX_REGION=$REGION
+            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+            export ANSIBLE_HOST_KEY_CHECKING=False
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags host
+            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags host
 
 - builder:
     name: OnMetal-Setup-Cobbler
     description: Runs installation and configuration of Cobbler
     builders:
-        - shining-panda:
-            build-environment: virtualenv
-            python-version: System-CPython-2.7
-            nature: shell
-            command: |
-                #!/bin/bash
-                cd rax-ansible-testing
-                pip install ansible pyrax
-                export ANSIBLE_FORCE_COLOR=true
-                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-                export RAX_REGION=$REGION
-                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
-                export ANSIBLE_HOST_KEY_CHECKING=False
+        - shell: |
+            #!/bin/bash
+            if [[ ! -d ".venv" ]]; then
+                virtualenv .venv
+            fi
+            source .venv/bin/activate
+            pip install ansible pyrax
+            cd rax-ansible-testing
+            export ANSIBLE_FORCE_COLOR=true
+            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+            export RAX_REGION=$REGION
+            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+            export ANSIBLE_HOST_KEY_CHECKING=False
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags cobbler
+            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags cobbler
 
 - builder:
     name: OnMetal-Virtual-Networks
     description: Setup libvirt networks used for the Host VMs
     builders:
-        - shining-panda:
-            build-environment: virtualenv
-            python-version: System-CPython-2.7
-            nature: shell
-            command: |
-                #!/bin/bash
-                cd rax-ansible-testing
-                pip install ansible pyrax
-                export ANSIBLE_FORCE_COLOR=true
-                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-                export RAX_REGION=$REGION
-                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
-                export ANSIBLE_HOST_KEY_CHECKING=False
+        - shell: |
+            #!/bin/bash
+            if [[ ! -d ".venv" ]]; then
+                virtualenv .venv
+            fi
+            source .venv/bin/activate
+            pip install ansible pyrax
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags networks
+            cd rax-ansible-testing
+            export ANSIBLE_FORCE_COLOR=true
+            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+            export RAX_REGION=$REGION
+            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+            export ANSIBLE_HOST_KEY_CHECKING=False
+
+            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags networks
 
 - builder:
     name: OnMetal-Deploy-VMs
     description:
     builders:
-        - shining-panda:
-            build-environment: virtualenv
-            python-version: System-CPython-2.7
-            nature: shell
-            command: |
-                #!/bin/bash
-                cd rax-ansible-testing
-                pip install ansible pyrax
-                export ANSIBLE_FORCE_COLOR=true
-                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-                export RAX_REGION=$REGION
-                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
-                export ANSIBLE_HOST_KEY_CHECKING=False
+        - shell: |
+            #!/bin/bash
+            if [[ ! -d ".venv" ]]; then
+                virtualenv .venv
+            fi
+            source .venv/bin/activate
+            pip install ansible pyrax
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags vms
+            cd rax-ansible-testing
+            export ANSIBLE_FORCE_COLOR=true
+            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+            export RAX_REGION=$REGION
+            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+            export ANSIBLE_HOST_KEY_CHECKING=False
+
+            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags vms
+
 - builder:
     name: OnMetal-OpenStack-Setup
     description:
     builders:
-        - shining-panda:
-            build-environment: virtualenv
-            python-version: System-CPython-2.7
-            nature: shell
-            command: |
-                #!/bin/bash
-                cd rax-ansible-testing
-                pip install ansible pyrax
-                export ANSIBLE_FORCE_COLOR=true
-                export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-                export RAX_REGION=$REGION
-                export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
-                export ANSIBLE_HOST_KEY_CHECKING=False
+        - shell: |
+            #!/bin/bash
+            if [[ ! -d ".venv" ]]; then
+                virtualenv .venv
+            fi
+            source .venv/bin/activate
+            pip install ansible pyrax
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags osa
+            cd rax-ansible-testing
+            export ANSIBLE_FORCE_COLOR=true
+            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+            export RAX_REGION=$REGION
+            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+            export ANSIBLE_HOST_KEY_CHECKING=False
+
+            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME region=$REGION" --skip-tags build --tags osa
