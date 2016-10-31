@@ -139,7 +139,7 @@
                 export RAX_REGION=$REGION
                 export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME flavor=$FLAVOR image=$IMAGE count=1 key_name=jenkins-key group=om-aio" --tags build --skip-tags always
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME flavor=$FLAVOR image=$IMAGE count=1 key_name=jenkins group=om-aio" --tags build --skip-tags always
 
 - builder:
     name: OnMetal-Setup-Host
@@ -159,7 +159,7 @@
                 export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
                 export ANSIBLE_HOST_KEY_CHECKING=False
 
-                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags setup
+                ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags host
 
 - builder:
     name: OnMetal-Setup-Cobbler
