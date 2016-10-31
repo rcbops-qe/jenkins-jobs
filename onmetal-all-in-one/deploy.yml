@@ -83,7 +83,8 @@
             colormap: xterm
     builders:
         - install-ansible
-        - onmetal-aio-action-builder
+        - onmetal-aio-action-builder:
+            tags: "{tags}"
 
 - project:
     name: onmetal-all-in-one-deploy
@@ -164,7 +165,7 @@
             export ANSIBLE_FORCE_COLOR=true
             export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
             export RAX_REGION=$REGION
-            export SERVER_NAME=${SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}
+            export SERVER_NAME=${{SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}}
             export ANSIBLE_HOST_KEY_CHECKING=False
 
             ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME" --skip-tags build --tags {tags}
