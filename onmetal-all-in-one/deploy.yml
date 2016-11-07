@@ -34,7 +34,12 @@
             name: JENKINS_OA_BRANCH
             default: master
     scm:
-        - jenkins-oa-scm
+        - git:
+            url: $JENKINS_OA_REPO
+            branches:
+                - $JENKINS_OA_BRANCH
+            basedir: rax-ansible-testing
+            wipe-workspace: false
     wrappers:
         - mask-passwords
         - ansicolor:
@@ -47,21 +52,13 @@
     name: 'OnMetal-AIO-{deploy-action}'
     build-discarder:
         days-to-keep: 30
-    node: 'general'
+    concurrent: true
     parameters:
-        - string:
-            name: SERVER_NAME
-            default: Jenkins-OM-AIO-
-            description: >
-               Name of server to run scripts on. Default name for servers created by OnMetal-AIO-Build-Host job
-               is Jenkins-OM-AIO-<build number>.
-        - choice:
-            name: REGION
-            description: Region of server to run scripts on
-            choices:
-                - DFW
-                - IAD
-                - LON
+        - node:
+            name: NODE
+            description: "OnMetal lab to build in"
+            ignore-offline-nodes: true
+            allowed-multiselect: true
         - string:
             name: OSA_BRANCH
             default: stable/mitaka
@@ -72,21 +69,24 @@
             name: OSA_OPS_BRANCH
             default: master
         - string:
-            name: JENKINS_OA_REPO
-            default: https://github.com/melissa-kam/rax-ansible-testing
-        - string:
-            name: JENKINS_OA_BRANCH
-            default: master
+            name: OSA_BRANCH
+            default: stable/mitaka
+        - bool:
+            name: PARTITION_HOST
+            default: true
     scm:
-        - jenkins-osa-ops-scm
+        - git:
+            url: $OSA_OPS_REPO
+            branches:
+                - $OSA_OPS_BRANCH
+            basedir: openstack-ansible-ops
+            wipe-workspace: false
     wrappers:
         - mask-passwords
-        - ansicolor:
-            colormap: xterm
     builders:
         - install-ansible
-        - onmetal-aio-ansible-action-builder:
-            tags: "{tags}"
+        - onmetal-aio-action-builder:
+            script: "{script}"
 
 - job-template:
     name: 'OnMetal-AIO-Setup-Jenkins-Slave'
@@ -149,44 +149,20 @@
     name: onmetal-all-in-one-deploy
     deploy-action:
         - Setup-Host:
-            tags: host
+            script: ./setup-host.sh
         - Setup-Cobbler:
-            tags: cobbler
+            script: ./setup-cobbler.sh
         - Virtual-Networks:
-            tags: networks
+            script: ./setup-virsh-net.sh
         - Deploy-VMs:
-            tags: vms
+            script: ./deploy-vms.sh
         - OpenStack-Setup:
-            tags: osa
+            script: ./deploy-osa.sh
     jobs:
         - 'OnMetal-AIO-Build-Host'
         - 'OnMetal-AIO-Setup-Jenkins-Slave'
         - 'OnMetal-AIO-{deploy-action}'
         - 'OnMetal-AIO-Deploy-RPC'
-
-- scm:
-    name: jenkins-oa-scm
-    scm:
-        - git:
-            url: $JENKINS_OA_REPO
-            branches:
-                - $JENKINS_OA_BRANCH
-            basedir: rax-ansible-testing
-            wipe-workspace: false
-- scm:
-    name: osa-ops-scm
-    scm:
-        - git:
-            url: $OSA_OPS_REPO
-            branches:
-                - $OSA_OPS_BRANCH
-            basedir: openstack-ansible-ops
-            wipe-workspace: false
-- scm:
-    name: jenkins-osa-ops-scm
-    scm:
-        - jenkins-oa-scm
-        - osa-ops-scm
 
 - builder:
     name: install-ansible
@@ -247,6 +223,18 @@
             ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME osa_branch=$OSA_BRANCH" --skip-tags build --tags {tags}
 
 - builder:
+    name: onmetal-aio-setup-script-builder
+    description: Runs specified multi-node-aio script
+    builders:
+        - shell: |
+            #!/bin/bash
+            cd multi-node-aio
+            export OSA_BRANCH=$OSA_BRANCH
+            export PARTITION_HOST=$PARTITION_HOST
+            export RUN_OSA=false
+            ./{script}
+
+- builder
     name: onmetal-aio-deploy-rpc
     description: Runs all setup and deployment of RPC
     builders:
