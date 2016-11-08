@@ -1,0 +1,43 @@
+- job:
+    name: 'OnMetal-AIO-Tempest-Tests'
+    description: >
+        Runs tempest tests against an OnMetal All in One host.
+
+    build-discarder:
+        days-to-keep: 30
+    concurrent: true
+    parameters:
+        - node:
+            name: NODE
+            description: "OnMetal lab to build in"
+            ignore-offline-nodes: true
+            allowed-multiselect: true
+        - string:
+            name: TEMPEST_TESTS
+            default: scenario api defcore
+    wrappers:
+        - mask-passwords
+    builders:
+        - shell: |
+            #!/bin/bash -ex
+            UTILITY_CONTAINER=$(ssh -T -oStrictHostKeyChecking=no infra2 sudo lxc-ls |grep utility)
+            ssh -T -oStrictHostKeyChecking=no infra2 sudo rm -rf /openstack/log/*_utility_*/*.xml
+            ssh -T -oStrictHostKeyChecking=no infra2 sudo lxc-attach -n "$UTILITY_CONTAINER" -v RUN_TEMPEST_OPTS='--serial' -- /opt/openstack_tempest_gate.sh ${TEMPEST_TESTS}
+    publishers:
+        - postbuildscript:
+            script-only-if-succeeded: false
+            builders:
+                - shell: |
+                    #!/usr/bin/sudo /bin/bash
+                    set +e
+                    set +x
+
+                    rm -rf archive
+                    mkdir archive
+                    UTILITY_CONTAINER=$(ssh -T -oStrictHostKeyChecking=no infra2 sudo lxc-ls |grep utility)
+                    (ssh -T -oStrictHostKeyChecking=no infra2 cat /openstack/log/$UTILITY_CONTAINER/*.xml) > archive/results.xml
+
+                    #don't return non-zero, ever.
+                    :
+        - junit:
+            results: "**/nosetests.xml"
