@@ -22,11 +22,9 @@
         days-to-keep: 30
     concurrent: true
     parameters:
-        - node:
+        - label:
             name: NODE
-            description: "OnMetal lab to build in"
-            ignore-offline-nodes: true
-            allowed-multiselect: true
+            description: "Name of Jenkins node to run on"
         - string:
             name: OSA_OPS_REPO
             default: https://github.com/rcbops-qe/openstack-ansible-ops
@@ -61,11 +59,9 @@
         - string:
             name: RPC_TAG
             default: r13.0.3
-        - node:
+        - label:
             name: NODE
-            description: "OnMetal lab to build in"
-            ignore-offline-nodes: true
-            allowed-multiselect: true
+            description: "Name of Jenkins node to run on"
     wrappers:
         - mask-passwords
         - ansicolor:
@@ -83,7 +79,7 @@
             export OSA_BRANCH=$OSA_BRANCH
             export PARTITION_HOST=$PARTITION_HOST
             export RUN_OSA=false
-            export SSHKEY=$(sudo cat /root/.ssh/id_rsa.pub)
+            export SSHKEY=$(sudo cat ~/.ssh/id_rsa.pub)
             sudo ./{script}
 
 - builder:

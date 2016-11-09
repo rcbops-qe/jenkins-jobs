@@ -7,9 +7,7 @@
 
 - job-template:
     name: 'OnMetal-AIO-Build-Host'
-    description: >
-        Creates a public OnMetal server and waits for it to become active.
-
+    description: Creates a public OnMetal server and waits for it to become active.
     build-discarder:
         days-to-keep: 30
     node: 'general'

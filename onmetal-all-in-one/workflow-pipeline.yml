@@ -58,7 +58,7 @@
             branches:
                 - $OSA_OPS_BRANCH
     dsl: |
-        node {
+        node ('general') {
             if(SERVER_NAME == ""){
                 SERVER_NAME = "Jenkins-OM-AIO-Pipeline-" + currentBuild.number
             }
@@ -104,7 +104,7 @@
             stage('Deploy RPC') {
                 build job: 'OnMetal-AIO-Deploy-RPC', parameters: build_parameters
             }
-            stage('Deploy RPC') {
+            stage('Run Tempest Tests') {
                 build job: 'OnMetal-AIO-Tempest-Tests', parameters: build_parameters
             }
         }
