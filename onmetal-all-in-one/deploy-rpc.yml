@@ -1,3 +1,21 @@
+- project:
+    name: onmetal-all-in-one-deploy
+    deploy-action:
+        - Setup-Host:
+            script: ./setup-host.sh
+        - Setup-Cobbler:
+            script: ./setup-cobbler.sh
+        - Virtual-Networks:
+            script: ./setup-virsh-net.sh
+        - Deploy-VMs:
+            script: ./deploy-vms.sh
+        - OpenStack-Setup:
+            script: ./deploy-osa.sh
+    jobs:
+        - 'OnMetal-AIO-{deploy-action}'
+        - 'OnMetal-AIO-Deploy-RPC'
+
+
 - job-template:
     name: 'OnMetal-AIO-{deploy-action}'
     build-discarder:
@@ -34,9 +52,9 @@
     wrappers:
         - mask-passwords
     builders:
-        - install-ansible
-        - onmetal-aio-action-builder:
+        - onmetal-aio-setup-script-builder:
             script: "{script}"
+
 
 - job-template:
     name: 'OnMetal-AIO-Deploy-RPC'
@@ -59,39 +77,6 @@
     builders:
         - onmetal-aio-deploy-rpc
 
-- project:
-    name: onmetal-all-in-one-deploy
-    deploy-action:
-        - Setup-Host:
-            script: ./setup-host.sh
-        - Setup-Cobbler:
-            script: ./setup-cobbler.sh
-        - Virtual-Networks:
-            script: ./setup-virsh-net.sh
-        - Deploy-VMs:
-            script: ./deploy-vms.sh
-        - OpenStack-Setup:
-            script: ./deploy-osa.sh
-    jobs:
-        - 'OnMetal-AIO-{deploy-action}'
-        - 'OnMetal-AIO-Deploy-RPC'
-
-- builder:
-    name: onmetal-aio-ansible-action-builder
-    description: Runs deployment playbook with specified tags
-    builders:
-        - shell: |
-            #!/bin/bash
-            source .venv/bin/activate
-            cd rax-ansible-testing
-
-            export ANSIBLE_FORCE_COLOR=true
-            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
-            export RAX_REGION=$REGION
-            export ANSIBLE_HOST_KEY_CHECKING=False
-
-            ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME osa_branch=$OSA_BRANCH" --skip-tags build --tags {tags}
-
 - builder:
     name: onmetal-aio-setup-script-builder
     description: Runs specified multi-node-aio script
@@ -104,7 +89,7 @@
             export RUN_OSA=false
             ./{script}
 
-- builder
+- builder:
     name: onmetal-aio-deploy-rpc
     description: Runs all setup and deployment of RPC
     builders:
