@@ -79,7 +79,7 @@
             export OSA_BRANCH=$OSA_BRANCH
             export PARTITION_HOST=$PARTITION_HOST
             export RUN_OSA=false
-            export SSHKEY=$(sudo cat ~/.ssh/id_rsa.pub)
+            export SSHKEY=$(sudo cat /root/.ssh/id_rsa.pub)
             sudo ./{script}
 
 - builder:
