@@ -1,5 +1,5 @@
 - project:
-    name: onmetal-all-in-one-deploy
+    name: onmetal-all-in-one-deploy-rpc
     deploy-action:
         - Setup-Host:
             script: ./setup-host.sh

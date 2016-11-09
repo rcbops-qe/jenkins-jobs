@@ -1,5 +1,5 @@
 - project:
-    name: onmetal-all-in-one-deploy
+    name: onmetal-all-in-one-deploy-server
     jobs:
         - 'OnMetal-AIO-Build-Host'
         - 'OnMetal-AIO-Setup-Jenkins-Slave'
