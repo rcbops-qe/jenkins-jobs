@@ -40,4 +40,4 @@
                     #don't return non-zero, ever.
                     :
         - junit:
-            results: "**/nosetests.xml"
+            results: "**/results.xml"
