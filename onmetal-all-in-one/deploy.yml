@@ -100,6 +100,11 @@
             description: >
                Name of server to add as Jenkins slave
         - string:
+            name: SLAVE_NAME
+            default:
+            description: >
+               Name to give slave node in Jenkins
+        - string:
             name: REGION
             description: Region of server
         - string:
@@ -221,10 +226,9 @@
             export ANSIBLE_FORCE_COLOR=true
             export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
             export RAX_REGION=$REGION
-            export SERVER_NAME=$SERVER_NAME
             export ANSIBLE_HOST_KEY_CHECKING=False
 
-            ansible-playbook deploy-jenkins-slave.yml -i inventory/ --extra-vars "name=$SERVER_NAME github_username=rpc-qe github_token=$PERSONAL_ACCESS_TOKEN" --skip build
+            ansible-playbook deploy-jenkins-slave.yml -i inventory/ --extra-vars "name=$SERVER_NAME slave_name=$SLAVE_NAME github_username=rpc-qe github_token=$PERSONAL_ACCESS_TOKEN" --skip build
 
 - builder:
     name: onmetal-aio-ansible-action-builder
@@ -238,7 +242,6 @@
             export ANSIBLE_FORCE_COLOR=true
             export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
             export RAX_REGION=$REGION
-            export SERVER_NAME=$SERVER_NAME
             export ANSIBLE_HOST_KEY_CHECKING=False
 
             ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME osa_branch=$OSA_BRANCH" --skip-tags build --tags {tags}
