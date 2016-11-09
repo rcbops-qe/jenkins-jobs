@@ -5,7 +5,7 @@
 
     build-discarder:
         days-to-keep: 30
-    node: 'slaves'
+    node: 'general'
     parameters:
         - choice:
             name: REGION
@@ -40,13 +40,14 @@
         - ansicolor:
             colormap: xterm
     builders:
+        - install-ansible
         - onmetal-aio-build-host-builder
 
 - job-template:
     name: 'OnMetal-AIO-{deploy-action}'
     build-discarder:
         days-to-keep: 30
-    node: 'slaves'
+    node: 'general'
     parameters:
         - string:
             name: SERVER_NAME
@@ -87,6 +88,36 @@
         - onmetal-aio-ansible-action-builder:
             tags: "{tags}"
 
+- job-template:
+    name: 'OnMetal-AIO-Setup-Jenkins-Slave'
+    build-discarder:
+        days-to-keep: 30
+    node: 'general'
+    parameters:
+        - string:
+            name: SERVER_NAME
+            default:
+            description: >
+               Name of server to add as Jenkins slave
+        - string:
+            name: REGION
+            description: Region of server
+        - string:
+            name: JENKINS_OA_REPO
+            default: https://github.com/melissa-kam/rax-ansible-testing
+        - string:
+            name: JENKINS_OA_BRANCH
+            default: master
+    scm:
+        - jenkins-oa-scm
+    wrappers:
+        - mask-passwords
+        - ansicolor:
+            colormap: xterm
+    builders:
+        - install-ansible
+        - setup-jenkins-swam
+
 
 - job-template:
     name: 'OnMetal-AIO-Deploy-RPC'
@@ -124,6 +155,7 @@
             tags: osa
     jobs:
         - 'OnMetal-AIO-Build-Host'
+        - 'OnMetal-AIO-Setup-Jenkins-Slave'
         - 'OnMetal-AIO-{deploy-action}'
         - 'OnMetal-AIO-Deploy-RPC'
 
@@ -178,6 +210,23 @@
             ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME flavor=$FLAVOR image=$IMAGE count=1 key_name=jenkins group=om-aio" --tags build --skip-tags always
 
 - builder:
+    name: setup-jenkins-swam
+    description: Runs Jenkins swarm/slave setup script
+    builders:
+        - shell: |
+            #!/bin/bash
+            source .venv/bin/activate
+            cd rax-ansible-testing
+
+            export ANSIBLE_FORCE_COLOR=true
+            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+            export RAX_REGION=$REGION
+            export SERVER_NAME=$SERVER_NAME
+            export ANSIBLE_HOST_KEY_CHECKING=False
+
+            ansible-playbook deploy-jenkins-slave.yml -i inventory/ --extra-vars "name=$SERVER_NAME github_username=rpc-qe github_token=$PERSONAL_ACCESS_TOKEN" --skip build
+
+- builder:
     name: onmetal-aio-ansible-action-builder
     description: Runs deployment playbook with specified tags
     builders:
@@ -189,7 +238,7 @@
             export ANSIBLE_FORCE_COLOR=true
             export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
             export RAX_REGION=$REGION
-            export SERVER_NAME=${{SERVER_NAME:-"Jenkins-OM-AIO-$BUILD_NUMBER"}}
+            export SERVER_NAME=$SERVER_NAME
             export ANSIBLE_HOST_KEY_CHECKING=False
 
             ansible-playbook public-cloud-deploy.yml -i inventory/ --extra-vars "name=$SERVER_NAME osa_branch=$OSA_BRANCH" --skip-tags build --tags {tags}
