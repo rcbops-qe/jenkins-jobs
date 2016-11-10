@@ -108,4 +108,4 @@
             export DEFAULT_CONNECTION_PLUGIN_PATH=plugins/connection_plugins
             export DEFAULT_TRANSPORT=ssh_retry
 
-            sudo ./scripts/deploy.sh
+            sudo -E ./scripts/deploy.sh
