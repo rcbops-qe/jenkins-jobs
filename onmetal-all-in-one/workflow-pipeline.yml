@@ -66,6 +66,7 @@
                 SLAVE_NAME = SERVER_NAME
             }
             build_parameters = [
+                [$class: 'LabelParameterValue', name: 'NODE', label: SLAVE_NAME],
                 string(name: 'REGION', value: region),
                 string(name: 'FLAVOR', value: flavor),
                 string(name: 'IMAGE', value: image),
@@ -77,7 +78,6 @@
                 string(name: 'OSA_OPS_BRANCH', value: OSA_OPS_BRANCH),
                 string(name: 'OSA_BRANCH', value: OSA_BRANCH),
                 string(name: 'RPC_TAG', value: RPC_TAG),
-                string(name: 'NODE', value: SLAVE_NAME),
                 string(name: 'TEMPEST_TESTS', value: TEMPEST_TESTS)
             ]
             stage('Build OnMetal Host Server') {
