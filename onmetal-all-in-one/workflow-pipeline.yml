@@ -66,7 +66,6 @@
                 SLAVE_NAME = SERVER_NAME
             }
             build_parameters = [
-                [$class: 'LabelParameterValue', name: 'NODE', label: SLAVE_NAME],
                 string(name: 'REGION', value: region),
                 string(name: 'FLAVOR', value: flavor),
                 string(name: 'IMAGE', value: image),
@@ -86,6 +85,8 @@
             stage('Build Add Host Server as Slave Node') {
                 build job: 'OnMetal-AIO-Setup-Jenkins-Slave', parameters: build_parameters
             }
+
+            build_parameters = build_parameters + [[$class: 'LabelParameterValue', name: 'NODE', label: SLAVE_NAME]]
             stage('Basic Host Server Setup') {
                 build job: 'OnMetal-AIO-Setup-Host', parameters: build_parameters
             }
