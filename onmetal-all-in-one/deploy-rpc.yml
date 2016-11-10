@@ -1,0 +1,111 @@
+- project:
+    name: onmetal-all-in-one-deploy-rpc
+    deploy-action:
+        - Setup-Host:
+            script: setup-host.sh
+        - Setup-Cobbler:
+            script: setup-cobbler.sh
+        - Virtual-Networks:
+            script: setup-virsh-net.sh
+        - Deploy-VMs:
+            script: deploy-vms.sh
+        - OpenStack-Setup:
+            script: deploy-osa.sh
+    jobs:
+        - 'OnMetal-AIO-{deploy-action}'
+        - 'OnMetal-AIO-Deploy-RPC'
+
+
+- job-template:
+    name: 'OnMetal-AIO-{deploy-action}'
+    build-discarder:
+        days-to-keep: 30
+    concurrent: true
+    parameters:
+        - label:
+            name: NODE
+            description: "Name of Jenkins node to run on"
+        - string:
+            name: OSA_OPS_REPO
+            default: https://github.com/rcbops-qe/openstack-ansible-ops
+        - string:
+            name: OSA_OPS_BRANCH
+            default: master
+        - string:
+            name: OSA_BRANCH
+            default: stable/mitaka
+        - bool:
+            name: PARTITION_HOST
+            default: true
+    scm:
+        - git:
+            url: $OSA_OPS_REPO
+            branches:
+                - $OSA_OPS_BRANCH
+            wipe-workspace: false
+    wrappers:
+        - mask-passwords
+    builders:
+        - onmetal-aio-setup-script-builder:
+            script: "{script}"
+
+
+- job-template:
+    name: 'OnMetal-AIO-Deploy-RPC'
+    build-discarder:
+        days-to-keep: 30
+    concurrent: true
+    parameters:
+        - string:
+            name: RPC_TAG
+            default: r13.0.3
+        - label:
+            name: NODE
+            description: "Name of Jenkins node to run on"
+    wrappers:
+        - mask-passwords
+        - ansicolor:
+            colormap: xterm
+    builders:
+        - onmetal-aio-deploy-rpc
+
+- builder:
+    name: onmetal-aio-setup-script-builder
+    description: Runs specified multi-node-aio script
+    builders:
+        - shell: |
+            #!/bin/bash
+            cd multi-node-aio
+            export OSA_BRANCH=$OSA_BRANCH
+            export PARTITION_HOST=$PARTITION_HOST
+            export RUN_OSA=false
+            export SSHKEY=$(sudo cat /root/.ssh/id_rsa.pub)
+            sudo -E ./{script}
+
+- builder:
+    name: onmetal-aio-deploy-rpc
+    description: Runs all setup and deployment of RPC
+    builders:
+        - shell: |
+            #!/bin/bash -xe
+            sudo rm -rf /opt/rpc-openstack
+
+            sudo git clone -b $RPC_TAG --recursive https://github.com/rcbops/rpc-openstack /opt/rpc-openstack
+            cd  /opt/rpc-openstack
+
+            sudo cp /etc/openstack_deploy/user_variables.yml /etc/openstack_deploy/user_variables.yml.bak
+            sudo cp -R openstack-ansible/etc/openstack_deploy /etc
+            sudo cp /etc/openstack_deploy/user_variables.yml.bak /etc/openstack_deploy/user_variables.yml
+
+            sudo mv /etc/openstack_deploy/user_secrets.yml /etc/openstack_deploy/user_osa_secrets.yml
+            sudo cp rpcd/etc/openstack_deploy/user_*_defaults.yml /etc/openstack_deploy
+            sudo cp rpcd/etc/openstack_deploy/user_rpco_secrets.yml /etc/openstack_deploy
+            sudo cp rpcd/etc/openstack_deploy/env.d/* /etc/openstack_deploy/env.d
+
+            export DEPLOY_ELK=no
+            export DEPLOY_HARDENING=no
+            export DEPLOY_TEMPEST=yes
+            export DEFAULT_CONNECTION_PLUGIN_PATH=plugins/connection_plugins
+            export DEFAULT_TRANSPORT=ssh_retry
+
+            sudo -E ./scripts/deploy.sh

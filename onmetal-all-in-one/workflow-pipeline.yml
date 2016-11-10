@@ -1,7 +1,17 @@
 - job:
     name: OnMetal-All-In-One-Pipeline
     project-type: workflow
+    concurrent: true
     parameters:
+        - string:
+            name: RPC_TAG
+            default: r13.0.3
+        - string:
+            name: OSA_BRANCH
+            default: stable/mitaka
+        - string:
+            name: TEMPEST_TESTS
+            default: scenario api defcore
         - choice:
             name: REGION
             description: Region of server to build in
@@ -24,6 +34,10 @@
             description: >
                Optional name of host server. Defaults to Jenkins-OM-AIO-Pipeline-<build number>.
         - string:
+            name: SLAVE_NAME
+            description: >
+               Optional name to give to slave that will be displayed in Jenkins. Defaults to same as SERVER_NAME.
+        - string:
             name: OSA_OPS_REPO
             default: https://github.com/rcbops-qe/openstack-ansible-ops
         - string:
@@ -45,24 +59,35 @@
             branches:
                 - $OSA_OPS_BRANCH
     dsl: |
-        node {
-            name = SERVER_NAME
-            if(name == ""){
-                name = "Jenkins-OM-AIO-Pipeline-" + currentBuild.number
+        node ('general') {
+            if(SERVER_NAME == ""){
+                SERVER_NAME = "Jenkins-OM-AIO-Pipeline-" + currentBuild.number
+            }
+            if (SLAVE_NAME == ""){
+                SLAVE_NAME = SERVER_NAME
             }
             build_parameters = [
                 string(name: 'REGION', value: region),
                 string(name: 'FLAVOR', value: flavor),
                 string(name: 'IMAGE', value: image),
-                string(name: 'SERVER_NAME', value: name),
+                string(name: 'SERVER_NAME', value: SERVER_NAME),
+                string(name: 'SLAVE_NAME', value: SLAVE_NAME),
                 string(name: 'JENKINS_OA_REPO', value: JENKINS_OA_REPO),
                 string(name: 'JENKINS_OA_BRANCH', value: JENKINS_OA_BRANCH),
                 string(name: 'OSA_OPS_REPO', value: OSA_OPS_REPO),
-                string(name: 'OSA_OPS_BRANCH', value: OSA_OPS_BRANCH)
+                string(name: 'OSA_OPS_BRANCH', value: OSA_OPS_BRANCH),
+                string(name: 'OSA_BRANCH', value: OSA_BRANCH),
+                string(name: 'RPC_TAG', value: RPC_TAG),
+                string(name: 'TEMPEST_TESTS', value: TEMPEST_TESTS)
             ]
             stage('Build OnMetal Host Server') {
                 build job: 'OnMetal-AIO-Build-Host', parameters: build_parameters
             }
+            stage('Build Add Host Server as Slave Node') {
+                build job: 'OnMetal-AIO-Setup-Jenkins-Slave', parameters: build_parameters
+            }
+
+            build_parameters = build_parameters + [[$class: 'LabelParameterValue', name: 'NODE', label: SLAVE_NAME]]
             stage('Basic Host Server Setup') {
                 build job: 'OnMetal-AIO-Setup-Host', parameters: build_parameters
             }
@@ -79,5 +104,9 @@
                 build job: 'OnMetal-AIO-OpenStack-Setup', parameters: build_parameters
             }
             stage('Deploy RPC') {
+                build job: 'OnMetal-AIO-Deploy-RPC', parameters: build_parameters
+            }
+            stage('Run Tempest Tests') {
+                build job: 'OnMetal-AIO-Tempest-Tests', parameters: build_parameters
             }
         }
