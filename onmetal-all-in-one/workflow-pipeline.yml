@@ -1,6 +1,7 @@
 - job:
     name: OnMetal-All-In-One-Pipeline
     project-type: workflow
+    concurrent: true
     parameters:
         - string:
             name: RPC_TAG
