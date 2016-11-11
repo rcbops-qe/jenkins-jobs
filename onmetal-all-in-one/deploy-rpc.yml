@@ -27,7 +27,7 @@
             description: "Name of Jenkins node to run on"
         - string:
             name: OSA_OPS_REPO
-            default: https://github.com/rcbops-qe/openstack-ansible-ops
+            default: https://github.com/openstack/openstack-ansible-ops
         - string:
             name: OSA_OPS_BRANCH
             default: master
