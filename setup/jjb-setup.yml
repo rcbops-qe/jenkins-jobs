@@ -3,7 +3,7 @@
     description: Creates and updates jobs with Jenkins Job Builder.
     logrotate:
         daysToKeep: 20
-    node: master
+    node: general
     parameters:
         - string:
             name: JOBS
@@ -33,4 +33,4 @@
                     JJB_ARGS="--ignore-cache"
                 fi
 
-                jenkins-jobs --conf /var/lib/jenkins/jenkins_jobs.ini $JJB_ARGS update $JOBS
+                jenkins-jobs --conf ~/jenkins_jobs.ini $JJB_ARGS update $JOBS
