@@ -8,7 +8,7 @@
         - string:
             name: JOBS
             description: "Which jobs to update and with what options."
-            default: -r .
+            default: -r rpc-qe-jobs
         - bool:
             name: IGNORE_CACHE
             description: "Ignore cache when updating jobs."
