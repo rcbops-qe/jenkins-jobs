@@ -34,9 +34,11 @@
         - string:
             name: OSA_BRANCH
             default: stable/mitaka
+            description: Used only in OnMetal-AIO-OpenStack-Setup
         - bool:
             name: PARTITION_HOST
             default: true
+            description: Used only in OnMetal-AIO-Setup-Host
     scm:
         - git:
             url: $OSA_OPS_REPO
@@ -59,9 +61,10 @@
         - string:
             name: RPC_TAG
             default: r13.0.3
+            description: Tag or branch of rpc-openstack to deploy
         - label:
             name: NODE
-            description: "Name of Jenkins node to run on"
+            description: Name of Jenkins node to run on
     wrappers:
         - mask-passwords
         - ansicolor:
