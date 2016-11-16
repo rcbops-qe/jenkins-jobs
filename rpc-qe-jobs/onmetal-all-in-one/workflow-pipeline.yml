@@ -16,15 +16,15 @@
             name: REGION
             description: Region of server to build in
             choices:
-                - DFW
                 - IAD
+                - DFW
                 - LON
         - choice:
             name: FLAVOR
             descrption: "Note: onmetal-io1 (OnMetal V1) is only avaialble in IAD"
             choices:
-                - onmetal-io2
                 - onmetal-io1
+                - onmetal-io2
         - string:
             name: IMAGE
             description: Default is OnMetal - Ubuntu 14.04 LTS (Trusty Tahr)
