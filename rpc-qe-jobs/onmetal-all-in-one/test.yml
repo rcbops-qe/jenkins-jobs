@@ -29,13 +29,63 @@
                     #!/usr/bin/sudo /bin/bash
                     set +e
                     set +x
-
                     rm -rf archive
                     mkdir archive
-                    UTILITY_CONTAINER=$(sudo ssh -T -oStrictHostKeyChecking=no infra2 sudo lxc-ls |grep utility)
-                    (sudo ssh -T -oStrictHostKeyChecking=no infra2 cat /openstack/log/$UTILITY_CONTAINER/*.xml) > archive/results.xml
+
+                    # Copy VM logs
+                    scp -r infra2:/openstack/log archive/openstack
+                    scp -r infra2:/var/log archive/local
+
+                    # Collect OpenStack, RabbitMQ, and MySQL configs from containers
+                    for container in $(sudo ssh -T -oStrictHostKeyChecking=no infra2 sudo lxc-ls); do
+                        if [[ $container =~ .rabbit. ]]; then
+                            scp -r $container:/etc/rabbitmq archive/etc/
+                        elif [[ $container =~ .galera. ]]; then
+                            scp -r $container:/etc/mysql archive/etc/
+                        else
+                            policy_file=$(sudo ssh -T -oStrictHostKeyChecking=no $container find /etc -name policy.json)
+                            if [[ -n $policy_file ]]; then
+                                src=$(dirname $policy_file)
+                                scp -r $container:$src archive/etc/$container
+                            fi
+                        fi
+                    done
+
+                    for container in $(sudo ssh -T -oStrictHostKeyChecking=no cinder2 sudo lxc-ls); do
+                        policy_file=$(sudo ssh -T -oStrictHostKeyChecking=no $container find /etc -name policy.json)
+                        if [[ -n $policy_file ]]; then
+                            src=$(dirname $policy_file)
+                            scp -r $container:$src archive/etc/$container
+                        fi
+                    done
+
+                    for container in $(sudo ssh -T -oStrictHostKeyChecking=no swift2 sudo lxc-ls); do
+                        policy_file=$(sudo ssh -T -oStrictHostKeyChecking=no $container find /etc -name swift.conf)
+                        if [[ -n $policy_file ]]; then
+                            src=$(dirname $policy_file)
+                            scp -r $container:$src archive/etc/$container
+                        fi
+                    done
+
+                    # Jenkins user must be able to read all files to archive and transfer to
+                    # the master. Unreadable files will cause the whole archive operation to fail
+                    chown -R jenkins archive
+
+                    # remove dangling/circular symlinks
+                    find archive -type l -exec test ! -e {} \; -delete
+
+                    # delete anything that isn't a file or directory - pipes, specials etc
+                    find archive ! -type d  ! -type f -delete
+
+                    # delete anything not readable by the jenkins user
+                    find archive \
+                      |while read f; \
+                      do sudo -u jenkins [ -r $f ] || { echo $f; rm -rf $f; }; done
 
                     #don't return non-zero, ever.
                     :
         - junit:
-            results: "**/results.xml"
+            results: "**/tempest_results*.xml"
+        - archive:
+            artifacts: 'archive/**/*'
+            allow-empty: true
