@@ -1,0 +1,42 @@
+- job:
+    name: 'OnMetal-AIO-Cleanup'
+    description: >
+        Deletes created servers. Deletes all servers that have "Jenkins-OM-AIO" in their name
+         and are older than 6 hours.
+    logrotate:
+        daysToKeep: 14
+    concurrent: true
+    node: general
+    parameters:
+        - string:
+            name: REGION
+            description: "Region to delete servers in"
+            default: IAD
+        - string:
+            name: SLAVE_NAME
+            description: "Name or partial name of slave to delete"
+            default: Jenkins-OM-AIO
+        - string:
+            name: NUM_HRS
+            description: "Delete slave that is older than the number of hours specified"
+            default: "6"
+    scm:
+        - git:
+            url: https://github.com/rcbops-qe/jenkins-oa
+            branches:
+                - "*/master"
+            skip-tag: true
+            wipe-workspace: false
+    builders:
+        - shining-panda:
+            build-environment: virtualenv
+            python-version: System-CPython-2.7
+            nature: shell
+            command: |
+                pip install python-novaclient
+                cd scripts
+                export OS_AUTH_URL=https://identity.api.rackspacecloud.com/v2.0
+
+                if [[ -n $SLAVE_NAME ]]; then
+                    python aio_cleanup.py
+                fi
