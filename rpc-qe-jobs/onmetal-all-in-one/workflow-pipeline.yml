@@ -108,8 +108,10 @@
                 stage('Setup for Deploying Openstack Ansible') {
                     build job: 'OnMetal-AIO-OpenStack-Setup', parameters: node_build_parameters
                 }
-                stage('Deploy RPC') {
-                    build job: 'OnMetal-AIO-Deploy-RPC', parameters: node_build_parameters
+                retry(2) {
+                    stage('Deploy RPC') {
+                        build job: 'OnMetal-AIO-Deploy-RPC', parameters: node_build_parameters
+                    }
                 }
                 stage('Run Tempest Tests') {
                     build job: 'OnMetal-AIO-Tempest-Tests', parameters: node_build_parameters
