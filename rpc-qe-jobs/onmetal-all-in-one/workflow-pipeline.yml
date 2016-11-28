@@ -80,33 +80,42 @@
                 string(name: 'RPC_TAG', value: RPC_TAG),
                 string(name: 'TEMPEST_TESTS', value: TEMPEST_TESTS)
             ]
-            stage('Build OnMetal Host Server') {
-                build job: 'OnMetal-AIO-Build-Host', parameters: build_parameters
-            }
-            stage('Build Add Host Server as Slave Node') {
-                build job: 'OnMetal-AIO-Setup-Jenkins-Slave', parameters: build_parameters
+            try {
+                stage('Build OnMetal Host Server') {
+                    build job: 'OnMetal-AIO-Build-Host', parameters: build_parameters
+                }
+                stage('Build Add Host Server as Slave Node') {
+                    build job: 'OnMetal-AIO-Setup-Jenkins-Slave', parameters: build_parameters
+                }
+
+                node_build_parameters = build_parameters + [[$class: 'LabelParameterValue', name: 'NODE', label: SLAVE_NAME]]
+                stage('Basic Host Server Setup') {
+                    build job: 'OnMetal-AIO-Setup-Host', parameters: node_build_parameters
+                }
+                stage('Setup Cobbler on Host Server') {
+                    build job: 'OnMetal-AIO-Setup-Cobbler', parameters: node_build_parameters
+                }
+                stage('Setup Virtual Networks') {
+                    build job: 'OnMetal-AIO-Virtual-Networks', parameters: node_build_parameters
+                }
+                stage('Deploy VMs') {
+                    build job: 'OnMetal-AIO-Deploy-VMs', parameters: node_build_parameters
+                }
+                stage('Setup for Deploying Openstack Ansible') {
+                    build job: 'OnMetal-AIO-OpenStack-Setup', parameters: node_build_parameters
+                }
+                stage('Deploy RPC') {
+                    build job: 'OnMetal-AIO-Deploy-RPC', parameters: node_build_parameters
+                }
+                stage('Run Tempest Tests') {
+                    build job: 'OnMetal-AIO-Tempest-Tests', parameters: node_build_parameters
+                }
+            } catch (err) {
+                currentBuild.result = 'FAILURE'
+            } finally {
+                stage('Clean Up') {
+                    build job: 'OnMetal-AIO-Cleanup', parameters: build_parameters
+                }
             }
 
-            build_parameters = build_parameters + [[$class: 'LabelParameterValue', name: 'NODE', label: SLAVE_NAME]]
-            stage('Basic Host Server Setup') {
-                build job: 'OnMetal-AIO-Setup-Host', parameters: build_parameters
-            }
-            stage('Setup Cobbler on Host Server') {
-                build job: 'OnMetal-AIO-Setup-Cobbler', parameters: build_parameters
-            }
-            stage('Setup Virtual Networks') {
-                build job: 'OnMetal-AIO-Virtual-Networks', parameters: build_parameters
-            }
-            stage('Deploy VMs') {
-                build job: 'OnMetal-AIO-Deploy-VMs', parameters: build_parameters
-            }
-            stage('Setup for Deploying Openstack Ansible') {
-                build job: 'OnMetal-AIO-OpenStack-Setup', parameters: build_parameters
-            }
-            stage('Deploy RPC') {
-                build job: 'OnMetal-AIO-Deploy-RPC', parameters: build_parameters
-            }
-            stage('Run Tempest Tests') {
-                build job: 'OnMetal-AIO-Tempest-Tests', parameters: build_parameters
-            }
         }
