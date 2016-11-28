@@ -9,7 +9,7 @@
             default: true
         - string:
             name: RPC_TAG
-            default: r13.0.3
+            default: r13.1.1
         - string:
             name: OSA_BRANCH
             default: stable/mitaka
@@ -117,7 +117,7 @@
             } catch (err) {
                 currentBuild.result = 'FAILURE'
             } finally {
-                if (CLEANUP == true){
+                if (CLEANUP.toBoolean() == true){
                     stage('Clean Up') {
                         build job: 'OnMetal-AIO-Cleanup', parameters: build_parameters
                     }

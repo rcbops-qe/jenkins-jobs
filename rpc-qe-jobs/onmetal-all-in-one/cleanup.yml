@@ -19,7 +19,7 @@
         - string:
             name: NUM_HRS
             description: "Delete slave that is older than the number of hours specified"
-            default: "6"
+            default: "0"
     scm:
         - git:
             url: https://github.com/rcbops-qe/jenkins-oa
