@@ -27,16 +27,19 @@
                 - "*/master"
             skip-tag: true
             wipe-workspace: false
+    wrappers:
+        - mask-passwords
     builders:
         - shining-panda:
             build-environment: virtualenv
             python-version: System-CPython-2.7
             nature: shell
             command: |
-                pip install python-novaclient
+                pip install python-novaclient python-dateutil
                 cd scripts
                 export OS_AUTH_URL=https://identity.api.rackspacecloud.com/v2.0
+                export OS_REGION_NAME=$REGION
 
-                if [[ -n $SLAVE_NAME ]]; then
+                if [ -n "$SLAVE_NAME" ]; then
                     python aio_cleanup.py
                 fi
