@@ -60,7 +60,7 @@
     parameters:
         - string:
             name: RPC_TAG
-            default: r13.0.3
+            default: r13.1.0
             description: Tag or branch of rpc-openstack to deploy
         - label:
             name: NODE

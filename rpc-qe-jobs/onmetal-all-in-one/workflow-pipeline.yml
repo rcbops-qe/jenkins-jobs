@@ -9,7 +9,7 @@
             default: true
         - string:
             name: RPC_TAG
-            default: r13.1.1
+            default: r13.1.0
         - string:
             name: OSA_BRANCH
             default: stable/mitaka
