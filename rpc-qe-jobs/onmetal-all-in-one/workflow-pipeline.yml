@@ -3,6 +3,10 @@
     project-type: workflow
     concurrent: true
     parameters:
+        - bool:
+            name: CLEANUP
+            description: Delete created servers after pipeline is run, regardless of success or failure
+            default: true
         - string:
             name: RPC_TAG
             default: r13.0.3
@@ -113,8 +117,10 @@
             } catch (err) {
                 currentBuild.result = 'FAILURE'
             } finally {
-                stage('Clean Up') {
-                    build job: 'OnMetal-AIO-Cleanup', parameters: build_parameters
+                if (CLEANUP == true){
+                    stage('Clean Up') {
+                        build job: 'OnMetal-AIO-Cleanup', parameters: build_parameters
+                    }
                 }
             }
 
