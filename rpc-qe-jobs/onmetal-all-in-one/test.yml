@@ -4,7 +4,7 @@
         Runs tempest tests against an OnMetal All in One host.
 
     build-discarder:
-        days-to-keep: 30
+        days-to-keep: 60
     concurrent: true
     parameters:
         - label:
@@ -89,3 +89,30 @@
         - archive:
             artifacts: 'archive/**/*'
             allow-empty: true
+
+- job:
+    name: 'OnMetal-AIO-Horizon-Tests'
+    description: >
+        Triggers "horizon integration testing" job to run Horizon tests against an OnMetal All in One host dashboard.
+    build-discarder:
+        days-to-keep: 60
+    concurrent: true
+    parameters:
+        - label:
+            name: NODE
+            description: "Name of Jenkins node to run tests against"
+        - string:
+            name: OSA_BRANCH
+            default: stable/mitaka
+    builders:
+        - shell: |
+            #!/bin/bash
+            set +x
+            echo "ADMIN_PWD=$(sudo grep keystone_auth_admin_password /etc/openstack_deploy/user_osa_secrets.yml  | awk '{print $2}')" > test.env
+            echo "os_release=$OSA_BRANCH" >> test.env
+            ip_address=$(sudo ifconfig bond0.101 | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}')
+            echo "IP_ADDRESS=http://$ip_address/dashboard" >> test.env
+        - trigger-builds:
+            - project: horizon integration testing
+              property-file: test.env
+              block: true
