@@ -34,7 +34,7 @@
             description: Optional name for created server. Defaults to Jenkins-OM-AIO-<job build num>.
         - string:
             name: JENKINS_OA_REPO
-            default: https://github.com/melissa-kam/rax-ansible-testing
+            default: https://github.com/rcbops-qe/jenkins-oa
         - string:
             name: JENKINS_OA_BRANCH
             default: master
@@ -75,7 +75,7 @@
             description: Region of server
         - string:
             name: JENKINS_OA_REPO
-            default: https://github.com/melissa-kam/rax-ansible-testing
+            default: https://github.com/rcbops-qe/jenkins-oa
         - string:
             name: JENKINS_OA_BRANCH
             default: master
@@ -137,5 +137,6 @@
             export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
             export RAX_REGION=$REGION
             export ANSIBLE_HOST_KEY_CHECKING=False
+            export SLAVE_NAME="${SLAVE_NAME:-$SERVER_NAME}"
 
             ansible-playbook deploy-jenkins-slave.yml -i inventory/ --extra-vars "name=$SERVER_NAME slave_name=$SLAVE_NAME github_username=rpc-qe github_token=$PERSONAL_ACCESS_TOKEN" --skip build
