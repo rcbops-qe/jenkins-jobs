@@ -35,7 +35,7 @@
     builders:
         - shell: |
             #!/bin/sh
-            cd docker-horizon
+            cd docker/horizon-testing
             sed -i "/dashboard_url/c\dashboard_url=$DASHBOARD_URL" horizon.conf
             sed -i "s/^username=.*/username=$DEMO_USERNAME/g" horizon.conf
             sed -i "s/^password=.*/password=$DEMO_PWD/g" horizon.conf
