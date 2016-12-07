@@ -1,0 +1,53 @@
+- job:
+    name: 'Horizon-Integration-Tests'
+    description: Runs Horizon integration tests against a given endpoint.
+    logrotate:
+        daysToKeep: 60
+    node: general
+    parameters:
+        - string:
+            name: DASHBOARD_URL
+            description: URL of dashboard. Ex., https://ip-address
+            default: https://
+        - string:
+            name: OS_BRANCH
+            default: stable/mitaka
+        - string:
+            name: DEMO_USERNAME
+            default: demo
+        - password:
+            name: DEMO_PWD
+            default: demo
+        - string:
+            name: ADMIN_USERNAME
+            default: admin
+        - password:
+            name: ADMIN_PWD
+    scm:
+        - git:
+            url: https://github.com/melissa-kam/jenkins-oa
+            branches:
+                - "docker-horizon"
+            skip-tag: true
+            wipe-workspace: false
+    wrappers:
+        - mask-passwords
+    builders:
+        - shell: |
+            #!/bin/sh
+            cd docker-horizon
+            sed -i "/dashboard_url/c\dashboard_url=$DASHBOARD_URL" horizon.conf
+            sed -i "s/^username=.*/username=$DEMO_USERNAME/g" horizon.conf
+            sed -i "s/^password=.*/password=$DEMO_PWD/g" horizon.conf
+            sed -i "s/^admin_username=.*/admin_username=$ADMIN_USERNAME/g" horizon.conf
+            sed -i "s/^admin_password=.*/admin_password=$ADMIN_PWD/g" horizon.conf
+            cat horizon.conf
+            IMAGE_TAG=$(echo $OS_BRANCH |  tr / -)
+            CONTAINER_NAME="Horizon-Integration-Tests-$BUILD_ID"
+            docker build -t horizon-tests:$IMAGE_TAG --build-arg os_release=$OS_BRANCH .
+            docker run --name $CONTAINER_NAME -t horizon-tests:$IMAGE_TAG
+            docker cp $CONTAINER_NAME:/opt/horizon/nosetests.xml .
+            docker rm $CONTAINER_NAME
+    publishers:
+        - junit:
+            results: "**/nosetests.xml"

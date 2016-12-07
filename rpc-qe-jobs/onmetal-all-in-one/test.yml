@@ -93,7 +93,7 @@
 - job:
     name: 'OnMetal-AIO-Horizon-Tests'
     description: >
-        Triggers "horizon integration testing" job to run Horizon tests against an OnMetal All in One host dashboard.
+        Triggers "Horizon-Integration-Tests" job to run Horizon tests against an OnMetal All in One host dashboard.
     build-discarder:
         days-to-keep: 60
     concurrent: true
@@ -109,10 +109,10 @@
             #!/bin/bash
             set +x
             echo "ADMIN_PWD=$(sudo grep keystone_auth_admin_password /etc/openstack_deploy/user_osa_secrets.yml  | awk '{print $2}')" > test.env
-            echo "os_release=$OSA_BRANCH" >> test.env
+            echo "OS_BRANCH=$OSA_BRANCH" >> test.env
             ip_address=$(sudo ifconfig bond0.101 | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}')
-            echo "IP_ADDRESS=http://$ip_address/dashboard" >> test.env
+            echo "DASHBOARD_URL=https://$ip_address" >> test.env
         - trigger-builds:
-            - project: horizon integration testing
+            - project: Horizon-Integration-Tests
               property-file: test.env
               block: true
