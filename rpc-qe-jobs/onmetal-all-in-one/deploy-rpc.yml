@@ -13,8 +13,6 @@
             script: deploy-osa.sh
     jobs:
         - 'OnMetal-AIO-{deploy-action}'
-        - 'OnMetal-AIO-Deploy-RPC'
-
 
 - job-template:
     name: 'OnMetal-AIO-{deploy-action}'
@@ -51,8 +49,21 @@
         - onmetal-aio-setup-script-builder:
             script: "{script}"
 
+- builder:
+    name: onmetal-aio-setup-script-builder
+    description: Runs specified multi-node-aio script
+    builders:
+        - shell: |
+            #!/bin/bash
+            cd multi-node-aio
+            export OSA_BRANCH=$OSA_BRANCH
+            export PARTITION_HOST=$PARTITION_HOST
+            export RUN_OSA=false
+            export SSHKEY=$(sudo cat /root/.ssh/id_rsa.pub)
+            sudo -E ./{script}
 
-- job-template:
+
+- job:
     name: 'OnMetal-AIO-Deploy-RPC'
     build-discarder:
         days-to-keep: 30
@@ -69,25 +80,6 @@
         - mask-passwords
         - ansicolor:
             colormap: xterm
-    builders:
-        - onmetal-aio-deploy-rpc
-
-- builder:
-    name: onmetal-aio-setup-script-builder
-    description: Runs specified multi-node-aio script
-    builders:
-        - shell: |
-            #!/bin/bash
-            cd multi-node-aio
-            export OSA_BRANCH=$OSA_BRANCH
-            export PARTITION_HOST=$PARTITION_HOST
-            export RUN_OSA=false
-            export SSHKEY=$(sudo cat /root/.ssh/id_rsa.pub)
-            sudo -E ./{script}
-
-- builder:
-    name: onmetal-aio-deploy-rpc
-    description: Runs all setup and deployment of RPC
     builders:
         - shell: |
             #!/bin/bash -xe
