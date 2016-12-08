@@ -85,6 +85,7 @@
                 string(name: 'TEMPEST_TESTS', value: TEMPEST_TESTS)
             ]
             try {
+                // Create a public cloud server and add as a Jenkins slave
                 stage('Build OnMetal Host Server') {
                     build job: 'OnMetal-AIO-Build-Host', parameters: build_parameters
                 }
@@ -92,6 +93,7 @@
                     build job: 'OnMetal-AIO-Setup-Jenkins-Slave', parameters: build_parameters
                 }
 
+                // Run the all in one multi node setup on the cloud server
                 node_build_parameters = build_parameters + [[$class: 'LabelParameterValue', name: 'NODE', label: SLAVE_NAME]]
                 stage('Basic Host Server Setup') {
                     build job: 'OnMetal-AIO-Setup-Host', parameters: node_build_parameters
@@ -108,13 +110,23 @@
                 stage('Setup for Deploying Openstack Ansible') {
                     build job: 'OnMetal-AIO-OpenStack-Setup', parameters: node_build_parameters
                 }
+
+                // Deploy RPC
                 retry(2) {
                     stage('Deploy RPC') {
                         build job: 'OnMetal-AIO-Deploy-RPC', parameters: node_build_parameters
                     }
                 }
+
+                // Run tests, ignoring result to ensure remaining tests run
                 stage('Run Tempest Tests') {
-                    build job: 'OnMetal-AIO-Tempest-Tests', parameters: node_build_parameters
+                    def tempest = build job: 'OnMetal-AIO-Tempest-Tests', parameters: node_build_parameters, propagate: false
+                }
+                stage('Run Horizon Tests') {
+                    def horizon = build job: 'OnMetal-AIO-Horizon-Tests', parameters: node_build_parameters, propagate: false
+                }
+                if (tempest.result == "FAILURE" || horizon.result == "FAILURE"){
+                    currentBuild.result = 'FAILURE'
                 }
             } catch (err) {
                 currentBuild.result = 'FAILURE'
