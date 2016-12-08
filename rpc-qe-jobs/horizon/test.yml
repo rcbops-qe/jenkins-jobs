@@ -25,9 +25,9 @@
             name: ADMIN_PWD
     scm:
         - git:
-            url: https://github.com/melissa-kam/jenkins-oa
+            url: https://github.com/rcbops-qe/jenkins-oa
             branches:
-                - "docker-horizon"
+                - master
             skip-tag: true
             wipe-workspace: false
     wrappers:
