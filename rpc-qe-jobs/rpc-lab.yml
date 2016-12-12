@@ -1,0 +1,113 @@
+- job:
+    name: 'RPC-OA-Lab'
+    description: Deploys and tests RPC on a physical lab
+    logrotate:
+        daysToKeep: 60
+    concurrent: true
+    properties:
+        - github:
+            url: http://github.com/rcbops/rpc-openstack/
+        - throttle:
+            option: project
+            max-total: 15
+    parameters:
+        - string:
+            name: PRODUCT
+            default: rpc-openstack
+        - string:
+            name: RPC_REPO
+            default: https://github.com/rcbops/rpc-openstack
+        - string:
+            name: JENKINS_OA_REPO
+            default: https://github.com/rcbops-qe/jenkins-oa
+        - string:
+            name: JENKINS_OA_BRANCH
+            default: master
+        - string:
+            name: sha1
+            default: master
+            description: >
+              RPC-OA/OA git ref (sha/tag/branch/etc.) that points to the tested code.
+
+              Note: This is overridden by the GitHub Pull Request builder plugin
+        - string:
+            name: TEMPEST_TESTS
+            default: scenario api defcore
+            description: >
+                For available options, see the gen_test_list_ functions in
+                https://github.com/openstack/openstack-ansible-os_tempest/blob/master/templates/openstack_tempest_gate.sh.j2
+        - choice:
+            name: DEPLOY_CEPH
+            choices:
+                - "no"
+                - "yes"
+        - choice:
+            name: DEPLOY_SWIFT
+            choices:
+                - "yes"
+                - "no"
+        - string:
+            name: USER_VARS
+            description: Extra vars to inject into OSA/RPC user_variables.
+        - choice:
+            name: UPGRADE
+            choices:
+                - "no"
+                - "yes"
+        - string:
+            name: UPGRADE_FROM_REF
+            default: origin/kilo
+            description: Version to upgrade from
+        - choice:
+            name: UPGRADE_FROM_NEAREST_TAG
+            description: >
+                Traverse history starting from UPGRADE_FROM_REF to find the nearest tag,
+                then use that to deploy the old verison to upgrade from.
+            choices:
+                - "no"
+                - "yes"
+        - choice:
+            name: DEPLOY_MAAS
+            choices:
+                - "no"
+                - "yes"
+        - choice:
+            name: DEPLOY_HARDENING
+            choices:
+                - "yes"
+                - "no"
+        - string:
+            name: ANSIBLE_PARAMETERS
+            default: -vvvv
+            description: Additional ansible parameters. Default value increases verbosity.
+        - node:
+            name: NODE
+            description: Lab to build within
+            allowed-multiselect: true
+        - choice:
+            name: DEPLOY_F5
+            choices:
+                - "no"
+                - "yes"
+    scm:
+        - git:
+            url: "${RPC_REPO}"
+            branches:
+                - "${sha1}"
+            skip-tag: true
+            git-config-name: Jenkins
+            git-config-email: jenkins@openstack-ansible.com
+            submodule:
+                recursive: true
+            wipe-workspace: true
+            clean:
+                after: true
+    wrappers:
+        - workspace-cleanup
+        - timeout:
+            timeout: 1200
+
+        - mask-passwords
+        - timestamps
+        - ansicolor:
+            colormap: xterm
