@@ -1,0 +1,30 @@
+- job:
+    name: 'Kibana-Selenium-Tests'
+    description: Runs Kibana selenium tests on a given node
+    logrotate:
+        daysToKeep: 30
+    parameters:
+        - node:
+            name: Environment
+    scm:
+        - git:
+            url: https://github.com/rcbops-qe/kibana-selenium.git
+            branches:
+                - master
+            skip-tag: true
+    builders:
+        - shell: |
+            #!/bin/bash -x
+            #Setup virtual env for the project to build in
+            pip install virtualenv
+
+            rm -rf kib-sel-venv
+            virtualenv kib-sel-venv
+            . kib-sel-venv/bin/activate
+
+            pip install -r requirements.txt
+            export PYTHONPATH=$(pwd)
+            python conf-gen.py
+
+            #Execute the tests
+            python testrepo/kibana/kibana.py
