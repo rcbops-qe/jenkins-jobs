@@ -306,6 +306,99 @@
             max-failed-builds: 2
 
 
+- job:
+    name: 'RPC-OA-Lab-Tempest-Tests'
+    description: Deploys and tests RPC on a physical lab
+    logrotate:
+        daysToKeep: 60
+    concurrent: true
+    properties:
+        - github:
+            url: http://github.com/rcbops/rpc-openstack/
+        - throttle:
+            option: project
+            max-total: 15
+    parameters:
+        - string:
+            name: PRODUCT
+            default: rpc-openstack
+        - string:
+            name: RPC_REPO
+            default: https://github.com/rcbops/rpc-openstack
+        - string:
+            name: sha1
+            default: master
+            description: >
+              RPC-OA/OA git ref (sha/tag/branch/etc.) that points to the tested code.
+
+              Note: This is overridden by the GitHub Pull Request builder plugin
+        - string:
+            name: TEMPEST_TESTS
+            default: scenario api defcore
+            description: >
+                For available options, see the gen_test_list_ functions in
+                https://github.com/openstack/openstack-ansible-os_tempest/blob/master/templates/openstack_tempest_gate.sh.j2
+        - string:
+            name: USER_VARS
+            description: Extra vars to inject into OSA/RPC user_variables.
+        - node:
+            name: NODE
+            description: Lab to build within
+            allowed-multiselect: true
+    scm:
+        - git:
+            url: "${RPC_REPO}"
+            branches:
+                - "${sha1}"
+            skip-tag: true
+            git-config-name: Jenkins
+            git-config-email: jenkins@openstack-ansible.com
+            submodule:
+                recursive: true
+            wipe-workspace: true
+            clean:
+                after: true
+    wrappers:
+        - workspace-cleanup
+        - timeout:
+            timeout: 1200
+        - mask-passwords
+        - timestamps
+    builders:
+        - shell: |
+            #!/bin/bash -x
+
+            env > buildenv
+
+            PRODUCT_REPO_DIR="/opt/${PRODUCT}"
+
+            # Add any additional vars specified in jenkins job params
+            #uev=/opt/rpc-openstack/rpcd/etc/openstack_deploy/user_extras_variables.yml
+            #echo "$USER_VARS" | tee -a $uev
+
+            #fix sudoers because jenkins jcloud plugin stamps on it.
+            #sudo tee -a /etc/sudoers <<ESUDOERS
+            #%admin ALL=(ALL) ALL
+
+            # Allow members of group sudo to execute any command
+            #%sudo   ALL=(ALL:ALL) ALL
+
+            # Jenkins needs nopasword access to avoid tty error
+            #%jenkins ALL=(ALL) NOPASSWD: ALL
+            # See sudoers(5) for more information on "#include" directives:
+
+            #includedir /etc/sudoers.d
+            #ESUDOERS
+
+            echo "********************** Run Tempest ***********************"
+
+            # jenkins user does not have the necessary permissions to run lxc commands
+            # serial needed to ensure all tests
+            sudo rm -rf /openstack/log/*_utility_*/*.xml
+            sudo lxc-attach -n $(sudo lxc-ls |grep utility) -- /bin/bash -c "RUN_TEMPEST_OPTS='--serial' /opt/openstack_tempest_gate.sh ${TEMPEST_TESTS}"
+    publishers:
+        - archive-logs
+
 
 - publisher:
     name: archive-logs
