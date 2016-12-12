@@ -28,7 +28,6 @@
             default: master
             description: >
               RPC-OA/OA git ref (sha/tag/branch/etc.) that points to the tested code.
-
               Note: This is overridden by the GitHub Pull Request builder plugin
         - string:
             name: TEMPEST_TESTS
@@ -46,7 +45,7 @@
             choices:
                 - "yes"
                 - "no"
-        - string:
+        - text:
             name: USER_VARS
             description: Extra vars to inject into OSA/RPC user_variables.
         - choice:
