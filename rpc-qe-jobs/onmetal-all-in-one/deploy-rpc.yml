@@ -134,21 +134,20 @@
             ansible-playbook --extra-vars "server_name=$HOSTNAME" maas-entities.yml
 
             set +x
-            ADMIN_PWD=$(sudo grep keystone_auth_admin_password /etc/openstack_deploy/user_osa_secrets.yml  | awk '{print $2}')
+            sudo ADMIN_PWD=$(sudo grep keystone_auth_admin_password /etc/openstack_deploy/user_osa_secrets.yml  | awk '{print $2}')
 
-            /etc/openstack_deploy/user_rpco_variables_overrides.yml
-            echo "
+            sudo echo "
             rackspace_cloud_username: $OS_USERNAME
             rackspace_cloud_api_key: $OS_API_KEY
             rackspace_cloud_tenant_id: $OS_TENANT_NAME
             maas_notification_plan: npgvyFuPML
+            maas_fqdn_extension: .$HOSTNAME
 
             keystone_service_adminurl: http://172.29.236.200:5000/v3
             keystone_admin_user_name: admin
             keystone_admin_tenant_name: admin
-            keystone_auth_admin_password: $ADMIN_PWD
-
-            maas_fqdn_extension: .$HOSTNAME" >> /etc/openstack_deploy/user_rpco_variables_overrides.yml
+            keystone_auth_admin_password: $ADMIN_PWD" >> /etc/openstack_deploy/user_rpco_variables_overrides.yml
 
             set -x
-            cd /opt/rpc-openstack/rpcd/playbooks && openstack-ansible setup-maas.yml
+            export ANSIBLE_FORCE_COLOR=true
+            cd /opt/rpc-openstack/rpcd/playbooks && sudo -E openstack-ansible setup-maas.yml
