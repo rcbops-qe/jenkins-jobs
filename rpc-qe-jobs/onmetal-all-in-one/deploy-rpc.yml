@@ -104,3 +104,43 @@
             export DEFAULT_TRANSPORT=ssh_retry
 
             sudo -E ./scripts/deploy.sh
+
+
+- job:
+    name: 'OnMetal-AIO-Deploy-MaaS'
+    build-discarder:
+        days-to-keep: 30
+    concurrent: true
+        - label:
+            name: NODE
+            description: Name of Jenkins node to run on
+    wrappers:
+        - mask-passwords
+        - ansicolor:
+            colormap: xterm
+    builders:
+        - builder:
+            name: onmetal-aio-deploy-maas
+            builders:
+                - shell: |
+                    #!/bin/bash
+
+                    # create maas entities with ansible?
+
+                    set +x
+                    /etc/openstack_deploy/user_rpco_variables_overrides.yml
+
+                    rackspace_cloud_username:
+                    rackspace_cloud_api_key:
+                    rackspace_cloud_tenant_id: 863035
+                    maas_notification_plan: npgvyFuPML
+
+                    keystone_service_adminurl: http://172.29.236.200:5000/v3
+                    keystone_admin_user_name: admin
+                    keystone_admin_tenant_name: admin
+                    keystone_auth_admin_password:
+
+                    maas_fqdn_extension:
+
+
+                    cd /opt/rpc-openstack/rpcd/playbooks && openstack-ansible setup-maas.yml
