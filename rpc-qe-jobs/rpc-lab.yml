@@ -106,8 +106,269 @@
         - workspace-cleanup
         - timeout:
             timeout: 1200
-
         - mask-passwords
         - timestamps
         - ansicolor:
             colormap: xterm
+    builders:
+        - shell: |
+            #!/bin/bash -x
+            export ANSIBLE_FORCE_COLOR=true
+
+            PRODUCT_REPO_DIR="/opt/${PRODUCT}"
+
+            # Variables based on products' respective documentation
+            # case "$PRODUCT" in
+            #   "rpc-openstack" )
+            #     OA_REPO_DIR="${PRODUCT_REPO_DIR}/openstack-ansible"
+            #     ;;
+            #   "openstack-ansible" )
+            #     OA_REPO_DIR=$PRODUCT_REPO_DIR
+            #     ;;
+            #   * )
+            #     echo "Invalid product name. Choices: 'rpc-openstack' or 'openstack-ansible'"
+            #     ;;
+            # esac
+
+            # git plugin checks out repo to root of workspace
+            sudo ln -s $PWD $PRODUCT_REPO_DIR
+
+            # Add any additional vars specified in jenkins job params
+            uev=/opt/rpc-openstack/rpcd/etc/openstack_deploy/user_rpco_variables_defaults.yml
+            echo "$USER_VARS" | tee -a $uev
+
+            git clone ${JENKINS_OA_REPO}
+            cd jenkins-oa/
+            git checkout ${JENKINS_OA_BRANCH}
+
+            ansible-playbook site.yml \
+              --extra-vars="product=${PRODUCT}" \
+              --limit ${NODE,,} \
+              ${ANSIBLE_PARAMETERS}
+        - shell: |
+            #!/bin/bash -x
+
+            env > buildenv
+
+            #fix sudoers because jenkins jcloud plugin stamps on it.
+            sudo tee -a /etc/sudoers <<ESUDOERS
+            %admin ALL=(ALL) ALL
+
+            # Allow members of group sudo to execute any command
+            %sudo   ALL=(ALL:ALL) ALL
+
+            # See sudoers(5) for more information on "#include" directives:
+
+            #includedir /etc/sudoers.d
+            ESUDOERS
+
+            if [ "$UPGRADE_FROM_NEAREST_TAG" == "yes" ]
+              then
+                COMMITISH=$(git describe --tags --abbrev=0 $UPGRADE_FROM_REF)
+            else
+                COMMITISH=$UPGRADE_FROM_REF
+            fi
+            if [ "$UPGRADE" == "yes" ]; then
+                git fetch
+                git checkout $COMMITISH || {
+                  echo "Checkout failed, quitting"
+                  exit 1
+                }
+            fi
+
+            git submodule sync
+            git submodule update --init
+
+            # If the F5 needs to be configured, do so here.
+            if [[ "$DEPLOY_F5" == "yes" ]]; then
+              echo "******************** Deploy F5 *********************"
+
+              # Generate Inventory
+              sudo ./openstack-ansible/playbooks/inventory/dynamic_inventory.py --list
+              INVENTORY_RC=$?
+              if [[ $INVENTORY_RC == 0 ]]; then
+                # Run LEM tooling to lay F5 Config down
+                pushd /opt/rpc_lem/user-tools/
+                sudo ./f5_clear.py
+                sudo ./f5_deploy.sh /etc/openstack_deploy/openstack_inventory.json
+                F5_RC=$?
+                if [[ $F5_RC == 1 ]]; then
+                  echo "F5 Deploy Failed, exiting"
+                  exit 1
+                fi
+              else
+                 echo "Failed to generate inventory file, exiting"
+                 exit 1
+              fi
+            fi
+
+            echo "********************** Run RPC Deploy Script ***********************"
+
+            sudo \
+              DEPLOY_TEMPEST=yes \
+              DEPLOY_CEPH=${DEPLOY_CEPH} \
+              DEPLOY_SWIFT=${DEPLOY_SWIFT} \
+              DEPLOY_MAAS=${DEPLOY_MAAS} \
+              DEPLOY_HARDENING=${DEPLOY_HARDENING} \
+              ANSIBLE_PARAMETERS=${ANSIBLE_PARAMETERS} \
+              FORKS=10 \
+              scripts/deploy.sh
+
+            DEPLOY_RC=$?
+
+            echo "********************** Run Tempest ***********************"
+
+            if [[ $DEPLOY_RC == 0 ]]; then
+              # jenkins user does not have the necessary permissions to run lxc commands
+              # serial needed to ensure all tests
+              sudo rm -rf /openstack/log/*_utility_*/*.xml
+              sudo lxc-attach -n $(sudo lxc-ls |grep utility) -- /bin/bash -c "RUN_TEMPEST_OPTS='--serial' /opt/openstack_tempest_gate.sh ${TEMPEST_TESTS}"
+
+              TEMPEST_RC=$?
+            else
+              TEMPEST_RC=1
+            fi
+
+            [ $DEPLOY_RC == 0 -a $TEMPEST_RC == 0 ]
+            OVERALL_RESULT=$?
+
+            if [ "$UPGRADE" == "yes" ] && [ "$OVERALL_RESULT" -eq 0 ];
+              then
+                echo "Pre-upgrade Deployment Ansible Result: $DEPLOY_RC"
+                echo "Pre-upgrade Deployment Tempest Result: $TEMPEST_RC"
+                echo "Pre-upgrade Deployment Overall Result: $OVERALL_RESULT"
+
+                git stash
+                git checkout ${sha1}
+                if [[ ! -z "${ghprbTargetBranch}" ]]; then
+                  echo "Rebasing ${sha1} on ${ghprbTargetBranch}"
+                  git rebase origin/${ghprbTargetBranch} || {
+                    echo "Rebase failed, quitting"
+                    exit 1
+                  }
+                fi
+                git submodule sync
+                git submodule update --init
+                echo "********************** Run RPC Deploy Script ***********************"
+                if [[ "$UPGRADE_TYPE" == "major" ]]; then
+                  sudo \
+                    TERM=linux \
+                    DEPLOY_TEMPEST=yes \
+                    DEPLOY_CEPH=${DEPLOY_CEPH} \
+                    DEPLOY_SWIFT=${DEPLOY_SWIFT} \
+                    DEPLOY_MAAS=${DEPLOY_MAAS} \
+                    DEPLOY_HARDENING=${DEPLOY_HARDENING} \
+                    BOOTSTRAP_OPTS=$BOOTSTRAP_OPTS \
+                    scripts/upgrade.sh
+                else
+                  sudo \
+                    DEPLOY_TEMPEST=yes \
+                    DEPLOY_CEPH=${DEPLOY_CEPH} \
+                    DEPLOY_SWIFT=${DEPLOY_SWIFT} \
+                    DEPLOY_MAAS=${DEPLOY_MAAS} \
+                    DEPLOY_HARDENING=${DEPLOY_HARDENING} \
+                    BOOTSTRAP_OPTS=$BOOTSTRAP_OPTS \
+                    ANSIBLE_PARAMETERS=${ANSIBLE_PARAMETERS} \
+                    scripts/deploy.sh
+                fi
+                DEPLOY_RC=$?
+
+                echo "********************** Run Tempest ***********************"
+
+                if [[ $DEPLOY_RC == 0 ]]; then
+                  # jenkins user does not have the necessary permissions to run lxc commands
+                  # serial needed to ensure all tests
+                  sudo rm -rf /openstack/log/*_utility_*/*.xml
+                  sudo lxc-attach -n $(sudo lxc-ls |grep utility) -- /bin/bash -c "RUN_TEMPEST_OPTS='--serial' /opt/openstack_tempest_gate.sh ${TEMPEST_TESTS}"
+
+                  TEMPEST_RC=$?
+                else
+                  TEMPEST_RC=1
+                fi
+
+                [ $DEPLOY_RC == 0 -a $TEMPEST_RC == 0 ]
+                OVERALL_RESULT=$?
+
+            fi
+            # There are a number of AIO failures due the MaaS entity being missing.
+            # This is to validate the playbooks are failing correctly.
+            if [ "$DEPLOY_MAAS" == "yes" ]
+            then
+              raxmon-entities-list --debug
+            fi
+            echo "Ansible Result: $DEPLOY_RC"
+            echo "Tempest Result: $TEMPEST_RC"
+            echo "Overall Result: $OVERALL_RESULT"
+            exit $OVERALL_RESULT
+    publishers:
+        - archive-logs
+        - naginator:
+            max-failed-builds: 2
+
+
+
+- publisher:
+    name: archive-logs
+    publishers:
+        - postbuildscript:
+            script-only-if-succeeded: false
+            mark-unstable-if-failed: true
+            builders:
+                - shell: |
+                    #!/usr/bin/sudo /bin/bash
+                    set +e
+                    set -x
+
+                    echo "****** Copy Logs To Jenkins Workspace For Archival *******"
+
+                    # Copy logs into workspace for archival
+                    mkdir -p archive
+                    cp -rL /openstack/log archive/openstack
+                    cp -rL /var/log archive/local
+
+                    # Collect OpenStack, RabbitMQ, and MySQL configs from containers
+                    for container in $(lxc-ls); do
+                      mount /dev/lxc/$container /mnt/
+                      if [[ $container =~ .rabbit. ]]; then
+                        cp -r /mnt/etc/rabbitmq archive/etc/
+                      fi
+                      if [[ $container =~ .galera. ]]; then
+                        cp -r /mnt/etc/mysql archive/etc/
+                      fi
+                      find /mnt/ -name policy.json -o -name swift.conf \
+                        | while read policy; do \
+                        src=$(dirname $policy); \
+                        service=$(basename $src); \
+                        mkdir -p archive/etc/$container/; cp -r $src/ archive/etc/$container/;  done
+                      umount /mnt/
+                    done
+
+                    # Collect OpenStack configs from host
+                    find /etc -name policy.json -o -name swift.conf\
+                      |while read policy; do \
+                      src=$(dirname $policy); \
+                      mkdir -p archive/etc; cp -r $src/ archive/etc/;  done
+
+                    # Jenkins user must be able to read all files to archive and transfer to
+                    # the master. Unreadable files will cause the whole archive operation to fail
+                    chown -R jenkins archive
+
+                    # remove dangling/circular symlinks
+                    find archive -type l -exec test ! -e {} \; -delete
+
+                    # delete anything that isn't a file or directory - pipes, specials etc
+                    find archive ! -type d  ! -type f -delete
+
+                    # delete anything not readable by the jenkins user
+                    find archive \
+                      |while read f; \
+                      do sudo -u jenkins [ -r $f ] || { echo $f; rm -rf $f; }; done
+
+                    #don't return non-zero, ever.
+                    :
+        - archive:
+            artifacts: archive/**/*
+        - junit:
+            results: "archive/openstack/*_utility_*/*.xml"
+        - fingerprint:
+            files: archive/openstack/*_utility_*/*.xml
