@@ -107,14 +107,15 @@
 
 
 - job:
-    name: 'OnMetal-AIO-Deploy-MaaS'
+    name: 'OnMetal-AIO-Create-MaaS-Entities'
     build-discarder:
         days-to-keep: 30
     concurrent: true
+    node: 'general'
     parameters:
-        - label:
-            name: NODE
-            description: Name of Jenkins node to run on
+        - string:
+            name: SERVER_NAME
+            description: Name of server to append to created entities
         - string:
             name: JENKINS_OA_REPO
             default: https://github.com/rcbops-qe/jenkins-oa
@@ -128,25 +129,49 @@
         - ansicolor:
             colormap: xterm
     builders:
+        - install-ansible
         - shell: |
             #!/bin/bash
-            HOSTNAME=$(hostname)
-            ansible-playbook --extra-vars "server_name=$HOSTNAME" maas-entities.yml
+            source .venv/bin/activate
+            export ANSIBLE_FORCE_COLOR=true
+            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+            export RAX_REGION=IAD
+            ansible-playbook maas-entities.yml  --extra-vars "server_name=$SERVER_NAME"
 
+
+- job:
+    name: 'OnMetal-AIO-Deploy-MaaS'
+    build-discarder:
+        days-to-keep: 30
+    concurrent: true
+    parameters:
+        - label:
+            name: NODE
+            description: Name of Jenkins node to run on
+    wrappers:
+        - mask-passwords
+        - ansicolor:
+            colormap: xterm
+    builders:
+        - shell: |
+            #!/bin/bash
             set +x
-            sudo ADMIN_PWD=$(sudo grep keystone_auth_admin_password /etc/openstack_deploy/user_osa_secrets.yml  | awk '{print $2}')
+            export ADMIN_PWD=$(sudo grep keystone_auth_admin_password /etc/openstack_deploy/user_osa_secrets.yml  | awk '{print $2}')
 
-            sudo echo "
+            grep -Fxq rackspace_cloud_username /etc/openstack_deploy/user_rpco_variables_overrides.yml
+            if [[ $? -eq 1 ]]; then
+                sudo -E sh -c 'echo "
             rackspace_cloud_username: $OS_USERNAME
             rackspace_cloud_api_key: $OS_API_KEY
             rackspace_cloud_tenant_id: $OS_TENANT_NAME
             maas_notification_plan: npgvyFuPML
-            maas_fqdn_extension: .$HOSTNAME
+            maas_fqdn_extension: .$NODE_NAME
 
             keystone_service_adminurl: http://172.29.236.200:5000/v3
             keystone_admin_user_name: admin
             keystone_admin_tenant_name: admin
-            keystone_auth_admin_password: $ADMIN_PWD" >> /etc/openstack_deploy/user_rpco_variables_overrides.yml
+            keystone_auth_admin_password: $ADMIN_PWD" >> /etc/openstack_deploy/user_rpco_variables_overrides.yml'
+            fi
 
             set -x
             export ANSIBLE_FORCE_COLOR=true
