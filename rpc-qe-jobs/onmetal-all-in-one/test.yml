@@ -116,3 +116,22 @@
             - project: Horizon-Integration-Tests
               property-file: test.env
               block: true
+
+- job:
+    name: 'OnMetal-AIO-MaaS-Tests'
+    build-discarder:
+        days-to-keep: 30
+    concurrent: true
+    parameters:
+        - label:
+            name: NODE
+            description: Name of Jenkins node to run on
+    wrappers:
+        - mask-passwords
+        - ansicolor:
+            colormap: xterm
+    builders:
+        - shell: |
+            #!/bin/bash
+            export ANSIBLE_FORCE_COLOR=true
+            cd /opt/rpc-openstack/rpcd/playbooks && sudo -E openstack-ansible verify-maas.yml

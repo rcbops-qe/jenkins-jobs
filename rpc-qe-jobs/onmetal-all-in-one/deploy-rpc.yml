@@ -136,7 +136,7 @@
             export ANSIBLE_FORCE_COLOR=true
             export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
             export RAX_REGION=IAD
-            ansible-playbook maas-entities.yml  --extra-vars "server_name=$SERVER_NAME"
+            ansible-playbook aio-maas-entities.yml  --extra-vars "server_name=$SERVER_NAME"
 
 
 - job:

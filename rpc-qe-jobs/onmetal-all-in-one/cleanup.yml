@@ -43,3 +43,11 @@
                 if [ -n "$SLAVE_NAME" ]; then
                     python aio_cleanup.py
                 fi
+        - install-ansible
+        - shell: |
+            #!/bin/bash
+            source .venv/bin/activate
+            export ANSIBLE_FORCE_COLOR=true
+            export RAX_CREDS_FILE=~/.rackspace_cloud_credentials
+            export RAX_REGION=IAD
+            ansible-playbook aio-maas-cleanup.yml  --extra-vars "server_name=$SLAVE_NAME"
