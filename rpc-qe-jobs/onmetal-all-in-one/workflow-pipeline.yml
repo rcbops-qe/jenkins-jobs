@@ -125,7 +125,15 @@
                 stage('Run Horizon Tests') {
                     def horizon = build job: 'OnMetal-AIO-Horizon-Tests', parameters: node_build_parameters, propagate: false
                 }
-                if (tempest.result == "FAILURE" || horizon.result == "FAILURE"){
+                stage('Deploy MaaS'){
+                    build job: 'OnMetal-AIO-Create-MaaS-Entities', parameters: build_parameters
+                    build job: 'OnMetal-AIO-Deploy-MaaS', parameters: node_build_parameters, propagate: false
+                }
+                stage('Run MaaS Tests'){
+                    def maas = build job: 'OnMetal-AIO-MaaS-Tests', parameters: node_build_parameters, propagate: false
+                }
+
+                if (tempest.result == "FAILURE" || horizon.result == "FAILURE" || maas.result == "FAILURE"){
                     currentBuild.result = 'FAILURE'
                 }
             } catch (err) {
