@@ -157,6 +157,7 @@
             #!/bin/bash
             set +x
             export ADMIN_PWD=$(sudo grep keystone_auth_admin_password /etc/openstack_deploy/user_osa_secrets.yml  | awk '{print $2}')
+            HOSTNAME=$(hostname)
 
             grep -Fxq rackspace_cloud_username /etc/openstack_deploy/user_rpco_variables_overrides.yml
             if [[ $? -eq 1 ]]; then
@@ -166,6 +167,10 @@
             rackspace_cloud_tenant_id: $OS_TENANT_NAME
             maas_notification_plan: npgvyFuPML
             maas_fqdn_extension: .$NODE_NAME
+            memory_used_percentage_warning_threshold: 99.0
+            memory_used_percentage_critical_threshold: 99.5
+            net_max_speed: 1000
+            lb_name: $HOSTNAME
 
             keystone_service_adminurl: http://172.29.236.200:5000/v3
             keystone_admin_user_name: admin
