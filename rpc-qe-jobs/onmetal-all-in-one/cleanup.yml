@@ -29,6 +29,8 @@
             wipe-workspace: false
     wrappers:
         - mask-passwords
+        - ansicolor:
+            colormap: xterm
     builders:
         - shining-panda:
             build-environment: virtualenv

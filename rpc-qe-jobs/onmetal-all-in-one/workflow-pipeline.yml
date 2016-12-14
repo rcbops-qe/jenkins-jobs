@@ -49,7 +49,7 @@
             default: master
         - string:
             name: JENKINS_OA_REPO
-            default: https://github.com/melissa-kam/rax-ansible-testing
+            default: https://github.com/rcbops-qe/jenkins-oa
         - string:
             name: JENKINS_OA_BRANCH
             default: master
@@ -133,8 +133,8 @@
                     def maas = build job: 'OnMetal-AIO-MaaS-Tests', parameters: node_build_parameters, propagate: false
                 }
 
-                if (tempest.result == "FAILURE" || horizon.result == "FAILURE" || maas.result == "FAILURE"){
-                    currentBuild.result = 'FAILURE'
+                if (tempest.result != "SUCCESS" || horizon.result != "SUCCESS" || maas.result != "SUCCESS"){
+                    currentBuild.result = 'UNSTABLE'
                 }
             } catch (err) {
                 currentBuild.result = 'FAILURE'
