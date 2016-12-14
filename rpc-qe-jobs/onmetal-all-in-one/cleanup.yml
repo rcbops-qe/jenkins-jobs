@@ -1,7 +1,7 @@
 - job:
     name: 'OnMetal-AIO-Cleanup'
     description: >
-        Deletes created servers. Deletes all servers that have "Jenkins-OM-AIO" in their name
+        Deletes created servers and related MaaS entities. Deletes all servers that have "Jenkins-OM-AIO" in their name
          and are older than 6 hours.
     logrotate:
         daysToKeep: 14
