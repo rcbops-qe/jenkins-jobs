@@ -100,8 +100,6 @@
             export DEPLOY_ELK=no
             export DEPLOY_HARDENING=no
             export DEPLOY_TEMPEST=yes
-            export DEFAULT_CONNECTION_PLUGIN_PATH=plugins/connection_plugins
-            export DEFAULT_TRANSPORT=ssh_retry
 
             sudo -E ./scripts/deploy.sh
 
