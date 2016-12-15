@@ -119,30 +119,35 @@
                 }
 
                 // Run tests, ignoring result to ensure remaining tests run
+                def tempest
                 stage('Run Tempest Tests') {
-                    def tempest = build job: 'OnMetal-AIO-Tempest-Tests', parameters: node_build_parameters, propagate: false
+                    tempest = build job: 'OnMetal-AIO-Tempest-Tests', parameters: node_build_parameters, propagate: false
                 }
+                def horizon
                 stage('Run Horizon Tests') {
-                    def horizon = build job: 'OnMetal-AIO-Horizon-Tests', parameters: node_build_parameters, propagate: false
+                    horizon = build job: 'OnMetal-AIO-Horizon-Tests', parameters: node_build_parameters, propagate: false
                 }
+                def maas
                 stage('Deploy MaaS'){
                     build job: 'OnMetal-AIO-Create-MaaS-Entities', parameters: build_parameters
                     build job: 'OnMetal-AIO-Deploy-MaaS', parameters: node_build_parameters, propagate: false
                 }
                 stage('Run MaaS Tests'){
-                    def maas = build job: 'OnMetal-AIO-MaaS-Tests', parameters: node_build_parameters, propagate: false
+                    maas = build job: 'OnMetal-AIO-MaaS-Tests', parameters: node_build_parameters, propagate: false
                 }
 
                 if (tempest.result != "SUCCESS" || horizon.result != "SUCCESS" || maas.result != "SUCCESS"){
+                    print "Test jobs not successful, setting build to UNSTABLE"
                     currentBuild.result = 'UNSTABLE'
                 }
             } catch (err) {
+                print err
                 currentBuild.result = 'FAILURE'
             } finally {
                 if (CLEANUP.toBoolean() == true){
-                    stage('Clean Up') {
-                        build job: 'OnMetal-AIO-Cleanup', parameters: build_parameters
-                    }
+                    build job: 'OnMetal-AIO-Cleanup', parameters: build_parameters
+                } else {
+                    print "Skipping clean up"
                 }
             }
 
