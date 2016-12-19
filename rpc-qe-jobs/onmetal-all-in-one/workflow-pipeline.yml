@@ -132,7 +132,7 @@
                 def maas
                 stage('Deploy MaaS'){
                     build job: 'OnMetal-AIO-Create-MaaS-Entities', parameters: build_parameters
-                    build job: 'OnMetal-AIO-Deploy-MaaS', parameters: node_build_parameters, propagate: false
+                    build job: 'OnMetal-AIO-Deploy-MaaS', parameters: node_build_parameters
                 }
                 stage('Run MaaS Tests'){
                     maas = build job: 'OnMetal-AIO-MaaS-Tests', parameters: node_build_parameters, propagate: false
