@@ -112,8 +112,8 @@
                 }
 
                 // Deploy RPC
-                retry(2) {
-                    stage('Deploy RPC') {
+                stage('Deploy RPC') {
+                    retry(2) {
                         build job: 'OnMetal-AIO-Deploy-RPC', parameters: node_build_parameters
                     }
                 }
@@ -122,10 +122,12 @@
                 def tempest
                 stage('Run Tempest Tests') {
                     tempest = build job: 'OnMetal-AIO-Tempest-Tests', parameters: node_build_parameters, propagate: false
+                    print "Tempest test results were $tempest.result"
                 }
                 def horizon
                 stage('Run Horizon Tests') {
                     horizon = build job: 'OnMetal-AIO-Horizon-Tests', parameters: node_build_parameters, propagate: false
+                    print "Horizon test results were $horizon.result"
                 }
                 def maas
                 stage('Deploy MaaS'){
@@ -134,6 +136,7 @@
                 }
                 stage('Run MaaS Tests'){
                     maas = build job: 'OnMetal-AIO-MaaS-Tests', parameters: node_build_parameters, propagate: false
+                    print "MaaS test results were $maas.result"
                 }
 
                 if (tempest.result != "SUCCESS" || horizon.result != "SUCCESS" || maas.result != "SUCCESS"){
