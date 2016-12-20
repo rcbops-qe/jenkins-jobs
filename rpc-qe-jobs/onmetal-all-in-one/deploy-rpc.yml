@@ -97,7 +97,7 @@
             sudo cp rpcd/etc/openstack_deploy/user_rpco_secrets.yml /etc/openstack_deploy
             sudo cp rpcd/etc/openstack_deploy/env.d/* /etc/openstack_deploy/env.d
 
-            export DEPLOY_ELK=no
+            export DEPLOY_ELK=yes
             export DEPLOY_HARDENING=no
             export DEPLOY_TEMPEST=yes
 
