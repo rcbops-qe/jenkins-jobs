@@ -17,7 +17,7 @@
         - mask-passwords
     builders:
         - shell: |
-            #!/bin/bash -ex
+            #!/bin/bash -x
             UTILITY_CONTAINER=$(sudo ssh -T -oStrictHostKeyChecking=no infra2 sudo lxc-ls |grep utility)
             sudo ssh -T -oStrictHostKeyChecking=no infra2 sudo rm -rf /openstack/log/*_utility_*/*.xml
             sudo ssh -T -oStrictHostKeyChecking=no infra2 sudo lxc-attach -n "$UTILITY_CONTAINER" -v RUN_TEMPEST_OPTS='--serial' -- /opt/openstack_tempest_gate.sh ${TEMPEST_TESTS}
@@ -27,26 +27,31 @@
             builders:
                 - shell: |
                     #!/usr/bin/sudo /bin/bash
+                    echo "Archiving logs..."
                     set +e
                     set +x
                     rm -rf archive
                     mkdir archive
 
+                    mkdir -p ~/.ssh
+                    sudo cp /root/.ssh/id_rsa ~/.ssh/id_rsa_containers
+                    sudo chown jenkins:jenkins ~/.ssh/id_rsa_containers
+
                     # Copy VM logs
-                    scp -r infra2:/openstack/log archive/openstack
-                    scp -r infra2:/var/log archive/local
+                    scp -o StrictHostKeyChecking=no -r infra2:/openstack/log archive/openstack
+                    scp -o StrictHostKeyChecking=no -r infra2:/var/log archive/local
 
                     # Collect OpenStack, RabbitMQ, and MySQL configs from containers
                     for container in $(sudo ssh -T -oStrictHostKeyChecking=no infra2 sudo lxc-ls); do
                         if [[ $container =~ .rabbit. ]]; then
-                            scp -r $container:/etc/rabbitmq archive/etc/
+                            scp -o StrictHostKeyChecking=no  -oStrictHostKeyChecking=no -r $container:/etc/rabbitmq archive/etc/
                         elif [[ $container =~ .galera. ]]; then
-                            scp -r $container:/etc/mysql archive/etc/
+                            scp -o StrictHostKeyChecking=no -r $container:/etc/mysql archive/etc/
                         else
                             policy_file=$(sudo ssh -T -oStrictHostKeyChecking=no $container find /etc -name policy.json)
                             if [[ -n $policy_file ]]; then
                                 src=$(dirname $policy_file)
-                                scp -r $container:$src archive/etc/$container
+                                scp -o StrictHostKeyChecking=no -r $container:$src archive/etc/$container
                             fi
                         fi
                     done
@@ -55,7 +60,7 @@
                         policy_file=$(sudo ssh -T -oStrictHostKeyChecking=no $container find /etc -name policy.json)
                         if [[ -n $policy_file ]]; then
                             src=$(dirname $policy_file)
-                            scp -r $container:$src archive/etc/$container
+                            scp -o StrictHostKeyChecking=no -r $container:$src archive/etc/$container
                         fi
                     done
 
@@ -63,13 +68,13 @@
                         policy_file=$(sudo ssh -T -oStrictHostKeyChecking=no $container find /etc -name swift.conf)
                         if [[ -n $policy_file ]]; then
                             src=$(dirname $policy_file)
-                            scp -r $container:$src archive/etc/$container
+                            scp -o StrictHostKeyChecking=no -r $container:$src archive/etc/$container
                         fi
                     done
 
                     # Jenkins user must be able to read all files to archive and transfer to
                     # the master. Unreadable files will cause the whole archive operation to fail
-                    chown -R jenkins archive
+                    sudo chown -R jenkins archive
 
                     # remove dangling/circular symlinks
                     find archive -type l -exec test ! -e {} \; -delete
