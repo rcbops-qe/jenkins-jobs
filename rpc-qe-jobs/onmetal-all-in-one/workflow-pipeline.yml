@@ -89,7 +89,7 @@
                 stage('Build OnMetal Host Server') {
                     build job: 'OnMetal-AIO-Build-Host', parameters: build_parameters
                 }
-                stage('Build Add Host Server as Slave Node') {
+                stage('Add Host Server as Slave Node') {
                     build job: 'OnMetal-AIO-Setup-Jenkins-Slave', parameters: build_parameters
                 }
 
