@@ -98,6 +98,7 @@
             sudo cp rpcd/etc/openstack_deploy/env.d/* /etc/openstack_deploy/env.d
 
             export DEPLOY_ELK=yes
+            export DEPLOY_HAPROXY=yes
             export DEPLOY_HARDENING=no
             export DEPLOY_TEMPEST=yes
 
