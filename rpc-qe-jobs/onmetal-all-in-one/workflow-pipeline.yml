@@ -146,3 +146,48 @@
             }
 
         }
+
+
+- job:
+    name: OnMetal-Multi-Node-AIO-Setup-Pipeline
+    project-type: workflow
+    concurrent: true
+    parameters:
+        - string:
+            name: SLAVE_NAME
+            description: Name of node to run setup on
+        - string:
+            name: OSA_BRANCH
+            default: stable/mitaka
+        - string:
+            name: OSA_OPS_REPO
+            default: https://github.com/rcbops-qe/openstack-ansible-ops
+        - string:
+            name: OSA_OPS_BRANCH
+            default: master
+    dsl: |
+        node ('general') {
+            build_parameters = [
+                string(name: 'OSA_OPS_REPO', value: OSA_OPS_REPO),
+                string(name: 'OSA_OPS_BRANCH', value: OSA_OPS_BRANCH),
+                string(name: 'OSA_BRANCH', value: OSA_BRANCH)
+            ]
+
+            // Run the all in one multi node setup on the cloud server
+            node_build_parameters = build_parameters + [[$class: 'LabelParameterValue', name: 'NODE', label: SLAVE_NAME]]
+            stage('Basic Host Server Setup') {
+                build job: 'OnMetal-AIO-Setup-Host', parameters: node_build_parameters
+            }
+            stage('Setup Cobbler on Host Server') {
+                build job: 'OnMetal-AIO-Setup-Cobbler', parameters: node_build_parameters
+            }
+            stage('Setup Virtual Networks') {
+                build job: 'OnMetal-AIO-Virtual-Networks', parameters: node_build_parameters
+            }
+            stage('Deploy VMs') {
+                build job: 'OnMetal-AIO-Deploy-VMs', parameters: node_build_parameters
+            }
+            stage('Setup for Deploying Openstack Ansible') {
+                build job: 'OnMetal-AIO-OpenStack-Setup', parameters: node_build_parameters
+            }
+        }
