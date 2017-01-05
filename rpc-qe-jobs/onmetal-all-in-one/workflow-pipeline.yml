@@ -53,15 +53,6 @@
         - string:
             name: JENKINS_OA_BRANCH
             default: master
-    scm:
-        - git:
-            url: $JENKINS_OA
-            branches:
-                - $JENKINS_OA_BRANCH
-        - git:
-            url: $OSA_OPS_REPO
-            branches:
-                - $OSA_OPS_BRANCH
     dsl: |
         node ('general') {
             if(SERVER_NAME == ""){
