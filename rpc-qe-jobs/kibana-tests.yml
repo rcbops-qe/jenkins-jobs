@@ -4,29 +4,35 @@
     logrotate:
         daysToKeep: 30
     parameters:
-        - node:
-            name: Environment
+        - label:
+            name: NODE
+            description: "Name of Jenkins node to run tests against"
+    scm:
+        - git:
+            url: https://github.com/rcbops-qe/kibana-selenium.git
+            branches:
+                - master
+            skip-tag: true
     builders:
         - shell: |
             #!/bin/bash -x
+            sudo apt-get -y install phantomjs
+
             #Setup virtual env for the project to build in
             pip install virtualenv
 
-            rm -rf kib-sel-venv
-            virtualenv kib-sel-venv
-            . kib-sel-venv/bin/activate
+            if [[ ! -d ".venv" ]]; then
+                virtualenv .venv
+            fi
+            source .venv/bin/activate
 
             #Pull from github the code and setup the required pip packages.
-            sudo rm -rf /opt/kibana-selenium
-            cd /opt
-            sudo git clone https://github.com/rcbops-qe/kibana-selenium.git
-            sudo chmod 777 kibana-selenium
-            cd kibana-selenium
-            #mv ~/.pip/pip.conf ~/.pip/pip2.conf
             pip install -r requirements.txt
-            #mv ~/.pip/pip2.conf ~/.pip/pip.conf
             export PYTHONPATH=$(pwd)
-            sudo python conf-gen.py
 
             #Execute the tests
-            python /opt/kibana-selenium/testrepo/kibana/kibana.py
+            sudo python conf-gen.py --password-file /etc/openstack_deploy/user_rpco_secrets.yml --vip-file /etc/openstack_deploy/openstack_user_config.yml
+            nosetests -sv --with-xunit testrepo/kibana/kibana.py
+    publishers:
+        - junit:
+            results: "**/nosetests.xml"
