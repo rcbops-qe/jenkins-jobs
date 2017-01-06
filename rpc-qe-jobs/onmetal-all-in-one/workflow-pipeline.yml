@@ -120,6 +120,11 @@
                     horizon = build job: 'OnMetal-AIO-Horizon-Tests', parameters: node_build_parameters, propagate: false
                     print "Horizon test results were $horizon.result"
                 }
+                def kibana
+                stage('Run Kibana Tests'){
+                    kibana = build job: 'Kibana-Selenium-Tests', parameters: node_build_parameters, propagate: false
+                    print "Kibana test results were kibana.result"
+                }
                 def maas
                 stage('Deploy MaaS'){
                     build job: 'OnMetal-AIO-Create-MaaS-Entities', parameters: build_parameters
@@ -130,7 +135,7 @@
                     print "MaaS test results were $maas.result"
                 }
 
-                if (tempest.result != "SUCCESS" || horizon.result != "SUCCESS" || maas.result != "SUCCESS"){
+                if (tempest.result != "SUCCESS" || horizon.result != "SUCCESS" || kibana.result != "SUCCESS" || maas.result != "SUCCESS"){
                     print "Test jobs not successful, setting build to UNSTABLE"
                     currentBuild.result = 'UNSTABLE'
                 }
