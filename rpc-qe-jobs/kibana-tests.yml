@@ -13,6 +13,7 @@
             branches:
                 - master
             skip-tag: true
+            wipe-workspace: false
     builders:
         - shell: |
             #!/bin/bash -x
