@@ -43,7 +43,7 @@
                Optional name to give to slave that will be displayed in Jenkins. Defaults to same as SERVER_NAME.
         - string:
             name: OSA_OPS_REPO
-            default: https://github.com/rcbops-qe/openstack-ansible-ops
+            default: https://github.com/openstack/openstack-ansible-ops
         - string:
             name: OSA_OPS_BRANCH
             default: master
@@ -123,7 +123,7 @@
                 def kibana
                 stage('Run Kibana Tests'){
                     kibana = build job: 'Kibana-Selenium-Tests', parameters: node_build_parameters, propagate: false
-                    print "Kibana test results were kibana.result"
+                    print "Kibana test results were $kibana.result"
                 }
                 def maas
                 stage('Deploy MaaS'){
@@ -166,7 +166,7 @@
             default: stable/mitaka
         - string:
             name: OSA_OPS_REPO
-            default: https://github.com/rcbops-qe/openstack-ansible-ops
+            default: https://github.com/openstack/openstack-ansible-ops
         - string:
             name: OSA_OPS_BRANCH
             default: master
