@@ -105,6 +105,8 @@
 
             sudo -E ./scripts/deploy.sh
 
+            cd /opt/rpc-openstack/openstack-ansible/playbooks
+            sudo -E openstack-ansible haproxy-install.yml
 
 - job:
     name: 'OnMetal-AIO-Create-MaaS-Entities'
