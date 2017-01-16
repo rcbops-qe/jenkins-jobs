@@ -3,6 +3,7 @@
     description: Runs Horizon integration tests against a given endpoint.
     logrotate:
         daysToKeep: 60
+    concurrent: true
     node: general
     parameters:
         - string:

@@ -3,6 +3,7 @@
     description: Runs Kibana selenium tests on a given node
     logrotate:
         daysToKeep: 30
+    concurrent: true
     parameters:
         - label:
             name: NODE
