@@ -32,6 +32,9 @@
             pip install -r requirements.txt
             export PYTHONPATH=$(pwd)
 
+            # Remove any existing screenshots from old runs
+            rm -f *.png
+
             #Execute the tests
             sudo python conf-gen.py --password-file /etc/openstack_deploy/user_rpco_secrets.yml --vip-file /etc/openstack_deploy/openstack_user_config.yml
             nosetests -sv --with-xunit testrepo/kibana/kibana.py
