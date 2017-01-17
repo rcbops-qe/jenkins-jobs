@@ -12,11 +12,17 @@
         - bool:
             name: IGNORE_CACHE
             description: "Ignore cache when updating jobs."
+        - string:
+            name: JJB_REPO
+            default: https://github.com/rcbops-qe/jenkins-jobs
+        - string:
+            name: JJB_BRANCH
+            default: master
     scm:
         - git:
-            url: https://github.com/rcbops-qe/jenkins-jobs
+            url: $JJB_REPO
             branches:
-                - "*/master"
+                - $JJB_BRANCH
             skip-tag: true
             wipe-workspace: false
     builders:
