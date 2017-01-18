@@ -9,13 +9,16 @@
             default: true
         - string:
             name: RPC_TAG
-            default: r13.1.0
+            default: master
         - string:
             name: OSA_BRANCH
-            default: stable/mitaka
+            default: stable/newton
         - string:
             name: TEMPEST_TESTS
             default: scenario api defcore
+        - bool:
+            name: RUN_HORIZON_INTEGRATION_TESTS
+            default: false
         - choice:
             name: REGION
             description: Region of server to build in
@@ -115,10 +118,15 @@
                     tempest = build job: 'OnMetal-AIO-Tempest-Tests', parameters: node_build_parameters, propagate: false
                     print "Tempest test results were $tempest.result"
                 }
-                def horizon
+                def horizon_result = "SUCCESS"
                 stage('Run Horizon Tests') {
-                    horizon = build job: 'OnMetal-AIO-Horizon-Tests', parameters: node_build_parameters, propagate: false
-                    print "Horizon test results were $horizon.result"
+                    if(RUN_HORIZON_INTEGRATION_TESTS.toBoolean() == true){
+                        horizon = build job: 'OnMetal-AIO-Horizon-Tests', parameters: node_build_parameters, propagate: false
+                        print "Horizon test results were $horizon.result"
+                        horizon_result = horizon.result
+                    } else {
+                        print "Skipping Horizon integration test suite"
+                    }
                 }
                 def kibana
                 stage('Run Kibana Tests'){
@@ -135,7 +143,7 @@
                     print "MaaS test results were $maas.result"
                 }
 
-                if (tempest.result != "SUCCESS" || horizon.result != "SUCCESS" || kibana.result != "SUCCESS" || maas.result != "SUCCESS"){
+                if (tempest.result != "SUCCESS" || horizon_result != "SUCCESS" || kibana.result != "SUCCESS" || maas.result != "SUCCESS"){
                     print "Test jobs not successful, setting build to UNSTABLE"
                     currentBuild.result = 'UNSTABLE'
                 }
