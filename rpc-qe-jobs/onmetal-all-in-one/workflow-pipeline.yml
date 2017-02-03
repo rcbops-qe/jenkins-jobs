@@ -19,8 +19,8 @@
             name: DEFAULT_IMAGE
             description: Version of Ubuntu to use on multi-node VMs
             choices:
-                - 16.04
-                - 14.04.4
+                - '16.04'
+                - '14.04.4'
         - string:
             name: TEMPEST_TESTS
             default: scenario api defcore
@@ -185,8 +185,8 @@
             name: DEFAULT_IMAGE
             description: Version of Ubuntu to use on multi-node VMs
             choices:
-                - 16.04
-                - 14.04.4
+                - '16.04'
+                - '14.04.4'
         - string:
             name: OSA_OPS_REPO
             default: https://github.com/openstack/openstack-ansible-ops
