@@ -37,8 +37,8 @@
             name: DEFAULT_IMAGE
             description: Version of Ubuntu to use on multi-node VMs
             choices:
-                - 16.04
-                - 14.04.4
+                - '16.04'
+                - '14.04.4'
         - bool:
             name: PARTITION_HOST
             default: true
@@ -112,9 +112,6 @@
             export DEPLOY_TEMPEST=yes
 
             sudo -E ./scripts/deploy.sh
-
-            cd /opt/rpc-openstack/openstack-ansible/playbooks
-            sudo -E openstack-ansible haproxy-install.yml
 
 - job:
     name: 'OnMetal-AIO-Create-MaaS-Entities'
