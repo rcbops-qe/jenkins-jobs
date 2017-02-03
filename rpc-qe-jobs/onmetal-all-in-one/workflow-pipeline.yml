@@ -2,6 +2,8 @@
     name: OnMetal-All-In-One-Pipeline
     project-type: workflow
     concurrent: true
+    triggers:
+        - timed: 'H 4 * * *'
     parameters:
         - bool:
             name: CLEANUP
@@ -13,6 +15,12 @@
         - string:
             name: OSA_BRANCH
             default: stable/newton
+        - choice:
+            name: DEFAULT_IMAGE
+            description: Version of Ubuntu to use on multi-node VMs
+            choices:
+                - 16.04
+                - 14.04.4
         - string:
             name: TEMPEST_TESTS
             default: scenario api defcore
@@ -76,7 +84,8 @@
                 string(name: 'OSA_OPS_BRANCH', value: OSA_OPS_BRANCH),
                 string(name: 'OSA_BRANCH', value: OSA_BRANCH),
                 string(name: 'RPC_TAG', value: RPC_TAG),
-                string(name: 'TEMPEST_TESTS', value: TEMPEST_TESTS)
+                string(name: 'TEMPEST_TESTS', value: TEMPEST_TESTS,
+                string(name: 'DEFAULT_IMAGE', value: DEFAULT_IMAGE)
             ]
             try {
                 // Create a public cloud server and add as a Jenkins slave
@@ -171,7 +180,13 @@
             description: Name of node to run setup on
         - string:
             name: OSA_BRANCH
-            default: stable/mitaka
+            default: stable/newton
+        - choice:
+            name: DEFAULT_IMAGE
+            description: Version of Ubuntu to use on multi-node VMs
+            choices:
+                - 16.04
+                - 14.04.4
         - string:
             name: OSA_OPS_REPO
             default: https://github.com/openstack/openstack-ansible-ops
@@ -183,7 +198,8 @@
             build_parameters = [
                 string(name: 'OSA_OPS_REPO', value: OSA_OPS_REPO),
                 string(name: 'OSA_OPS_BRANCH', value: OSA_OPS_BRANCH),
-                string(name: 'OSA_BRANCH', value: OSA_BRANCH)
+                string(name: 'OSA_BRANCH', value: OSA_BRANCH,
+                string(name: 'DEFAULT_IMAGE', value: DEFAULT_IMAGE)
             ]
 
             // Run the all in one multi node setup on the cloud server
