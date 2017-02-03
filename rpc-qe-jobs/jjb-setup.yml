@@ -12,25 +12,34 @@
         - bool:
             name: IGNORE_CACHE
             description: "Ignore cache when updating jobs."
+        - string:
+            name: JJB_REPO
+            default: https://github.com/rcbops-qe/jenkins-jobs
+        - string:
+            name: JJB_BRANCH
+            default: master
     scm:
         - git:
-            url: https://github.com/rcbops-qe/jenkins-jobs
+            url: $JJB_REPO
             branches:
-                - "*/master"
+                - $JJB_BRANCH
             skip-tag: true
             wipe-workspace: false
     builders:
-        - shining-panda:
-            build-environment: virtualenv
-            python-version: System-CPython-2.7
-            nature: shell
-            command: |
-                rm -rf jenkins-job-builder
-                git clone https://github.com/openstack-infra/jenkins-job-builder
-                pip install ./jenkins-job-builder
+        - shell: |
+            #Setup virtual env for the project to build in
+            pip install virtualenv
 
-                if [ "$IGNORE_CACHE" = "true" ]; then
-                    JJB_ARGS="--ignore-cache"
-                fi
+            if [[ ! -d ".venv" ]]; then
+                scl enable python27 bash
+                virtualenv -p /opt/rh/python27/root/usr/bin/python .venv
+            fi
+            source .venv/bin/activate
 
-                jenkins-jobs --conf ~/jenkins_jobs.ini $JJB_ARGS update $JOBS
+            pip install jenkins-job-builder
+
+            if [ "$IGNORE_CACHE" = "true" ]; then
+                JJB_ARGS="--ignore-cache"
+            fi
+
+            jenkins-jobs --conf ~/jenkins_jobs.ini $JJB_ARGS update $JOBS
