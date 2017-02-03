@@ -142,6 +142,13 @@
                     kibana = build job: 'Kibana-Selenium-Tests', parameters: node_build_parameters, propagate: false
                     print "Kibana test results were $kibana.result"
                 }
+
+                def security
+                stage('Run Security Tests'){
+                    security = build job: 'OnMetal-AIO-Security-Tests', parameters: node_build_parameters, propagate: false
+                    print "Security test results were $security.result"
+                }
+
                 def maas
                 stage('Deploy MaaS'){
                     build job: 'OnMetal-AIO-Create-MaaS-Entities', parameters: build_parameters
