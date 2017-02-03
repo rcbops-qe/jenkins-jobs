@@ -2,6 +2,8 @@
     name: OnMetal-All-In-One-Pipeline
     project-type: workflow
     concurrent: true
+    triggers:
+        - timed: 'H 4 * * *'
     parameters:
         - bool:
             name: CLEANUP
